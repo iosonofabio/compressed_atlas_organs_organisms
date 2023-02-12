@@ -3,19 +3,19 @@ feature_types: ['gene_expression']
 
 paths:
   compressed_atlas:
-    "mouse": "./static/scData/tabula_muris.h5"
-    "human": "./static/scData/tabula_sapiens.h5"
-    "lemur": "./static/scData/tabula_microcebus.h5"
+    "mouse": "./static/atlas_data/tabula_muris.h5"
+    "human": "./static/atlas_data/tabula_sapiens.h5"
+    "lemur": "./static/atlas_data/tabula_microcebus.h5"
 
   # NOTE: this one is used for all species, depending on the column
-  gene_ids: "./static/scData/mouse_gene_names.tsv"
+  gene_ids: "./static/atlas_data/mouse_gene_names.tsv"
 
-  ortholog_genes: "./static/scData/human_mouse_gene_orthologs.tsv"
+  ortholog_genes: "./static/atlas_data/human_mouse_gene_orthologs.tsv"
 
   pathways:
     GO:
-      "mouse": "./static/scData/mouse_GO_tables.pkl"
-    KEGG: "./static/scData/kegg_pathway_dataframe.tsv"
+      "mouse": "./static/atlas_data/mouse_GO_tables.pkl"
+    KEGG: "./static/atlas_data/kegg_pathway_dataframe.tsv"
 
 pathways:
   KEGG:
