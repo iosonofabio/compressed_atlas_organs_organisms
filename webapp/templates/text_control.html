@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+
+{% block navbarend %}
+{% endblock %}
+
+{% block content %}
+
+  <div class="columns is-mobile is-centered tab-area">
+    <div class="field column is-half">
+      <div class="control askBar">
+        <input class="input is-info" id="textCommand" type="text" placeholder="What is the expression of Col6a2 in alveolar fibroblasts?">
+      </div>
+      <div class="control askSubmit">
+        <a class="button is-info" id="askOnClick">
+          <i class="fas fa-search"></i>
+        </a>
+      </div>
+
+    <div id="FAQsText">
+      <div id="FAQTextHeader">
+        <b>Typical questions and commands:</b>
+      </div>
+      <ul>
+        <li>What's the gene expression of Serpinf1?</li>
+        <li>What's the developmental progression of Car4?</li>
+        <li>Show the marker genes of pericytes</li>
+        <li>List the cell types at 10m</li>
+        <li>DEGs in Vent in exercise vs sedentary</li>
+        <li>Compare the expression of Col1a1,Col6a2,Actb in human vs mouse</li>
+        <li>(<b>NOTE:</b> "vs something" should be at the end of the sentence, not in the middle. Will improve soon)</li>
+      </ul>
+
+      <!--
+      <div id="FAQTextFooter">
+        <b>OR</b>
+      </div>
+      <div id="FAQTextFooter2">
+        Click the "record" button on the navigation bar to speak
+      </div>
+      -->
+    </div>
+  </div>
+
+  <script src="/js/textControl.js"></script>
+
+
+{% endblock %}

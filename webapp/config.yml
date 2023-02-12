@@ -1,0 +1,49 @@
+feature_types: ['gene_expression']
+#feature_types: ['gene_expression', 'chromatin_accessibility']
+
+paths:
+  compressed_atlas:
+    "mouse": "./static/scData/tabula_muris.h5"
+    "human": "./static/scData/tabula_sapiens.h5"
+    "lemur": "./static/scData/tabula_microcebus.h5"
+
+  # NOTE: this one is used for all species, depending on the column
+  gene_ids: "./static/scData/mouse_gene_names.tsv"
+
+  ortholog_genes: "./static/scData/human_mouse_gene_orthologs.tsv"
+
+  pathways:
+    GO:
+      "mouse": "./static/scData/mouse_GO_tables.pkl"
+    KEGG: "./static/scData/kegg_pathway_dataframe.tsv"
+
+pathways:
+  KEGG:
+    gene_set:
+      "mouse": "KEGG_2019_Mouse"
+      "human": "KEGG_2021_Human"
+      "lemur": "KEGG_2021_Human"
+
+
+defaults:
+  species: "mouse"
+  celltype: "Vent"
+  gene: "Actb"
+  genestring: "Actc1,Actn2,Myl2,Myh7,Col1a1,Col2a1,Pdgfrb,Pecam1,Gja5,Vwf,Ptprc,Ms4a1,Gzma,Cd3d,Cd68,Epcam"
+
+units:
+  counts:
+    long: "counts per ten thousand"
+
+
+order:
+  timepoint:
+    "mouse": ['1m', '3m', '10m', '18m', '~19m', '21m', '24m', '30m']
+    "human": ['31wk', '3yr', '31yr', '~60yr']
+
+  dataset:
+    "mouse": ['TMS']
+    "human": ['TS']
+    "lemur": ['TMC']
+
+# celltype order is chosen at compression time elsewhere, otherwise this becomes a mess

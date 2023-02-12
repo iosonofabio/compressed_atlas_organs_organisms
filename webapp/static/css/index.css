@@ -1,0 +1,104 @@
+.tab-area {
+    margin-top: 120px;
+    text-align: center;
+}
+
+.plotButtons {
+    margin: 0px;
+}
+
+#timepoint_info {
+    margin: 30px;
+    cursor: pointer;
+}
+
+#suggestions {
+    text-align: center;
+}
+
+#suggestionsHeader {
+ font-weight: bolder;
+}
+
+.suggestButton {
+    text-decoration: underline;
+    border-radius: 6px;
+    padding-left: 10px;
+    padding-right: 10px;
+}
+
+.suggestButton:hover {
+    color: #FFFFFF;
+    background-color: #485fc7;
+}
+
+.suggestGroup {
+    padding-top: 5px;
+    margin-bottom: 10px;
+    padding-left: 20px;
+    padding-right: 20px;
+}
+
+#AudioRecordButton {
+    text-align: center;
+    margin: 150px;
+}
+
+#FAQs {
+ margin-left: 150px;
+}
+
+#FAQsText {
+ padding-top: 20px;
+}
+
+#FAQTextHeader {
+ padding-bottom: 10px;
+}
+
+#FAQTextFooter {
+ padding: 20px;
+}
+
+#FAQTextFooter2 {
+ text-decoration: underline;
+}
+
+
+.askBar {
+ padding: 10px;
+}
+
+.askSubmit {
+ padding: 10px;
+}
+
+.cthead {
+ font-weight: bolder;
+ padding: 10px;
+}
+
+
+.P:hover,.E:hover,.m:hover {
+    color:rgb(22,132,212);
+}
+
+.overlay{
+    display: none;
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    z-index: 999;
+    background: rgba(255,255,255,0.8) url("/static/images/loader.gif") center no-repeat;
+}
+/* Turn off scrollbar when body element has the loading class */
+body.loading{
+    overflow: hidden;   
+}
+/* Make spinner image visible when body element has the loading class */
+body.loading .overlay{
+    display: block;
+}
+

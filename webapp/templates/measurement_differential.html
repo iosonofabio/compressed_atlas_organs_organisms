@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% block content %}
+
+  <!-- Tabs enable user to visualise heat map with normalisation method and hierachical clustered -->
+  <div class="columns is-mobile is-centered tab-area">
+    <div class="field column is-one-third">
+      <label class="label">Data scale</label>
+      <div class="control">
+        <div class="tabs is-toggle is-centered">
+          <ul>
+            <li id="log2FCTab" class="is-active">
+              <a id="log2FCOnClick">Log2 Fold Change</a>
+            </li>
+            <li id="cpmTab">
+              <a id="CPMOnClick">CPM(count/million)</a>
+            </li>
+            <li id="logTab">
+              <a id="log10OnClick">Log10</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="field column is-one-quarter">
+      <label class="label">Cell type order</label>
+      <div class="control">
+        <div class="tabs is-toggle is-centered">
+          <ul>
+            <li id="originalOrderTab" class="is-active">
+              <a id="originalOnClick">Original</a>
+            </li>
+            <li id="hierachicalTab">
+              <a id="hClusterOnClick">Hierachical Clustered</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Plots below -->
+  <div class="container" id="dataDisplay">
+    <div id="gene_suggestions"></div>
+    <div id="h5_data_plot"></div>   
+  </div>
+
+  <script>
+    var heatmapData = {{ heatmapData | safe }};
+  </script>
+  <script src="/js/heatmapDifferential.js"></script>
+
+{% endblock %}

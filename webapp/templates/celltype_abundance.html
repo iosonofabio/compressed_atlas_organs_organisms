@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block content %}
+
+    <div class="columns is-mobile is-centered tab-area">
+      <div class="field column is-one-quarter">
+        <label class="label">Data values</label>
+        <div class="control">
+          <div class="tabs is-toggle is-centered">
+            <ul>
+              <li id="cpmTab" class="is-active">
+                <a id="CPMOnClick">Percentage</a>
+              </li>
+              <li id="logTab">
+                <a id="log10OnClick">Log10[%]</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Plots below -->
+    <div class="container" id="dataDisplay">
+      <div id="h5_data_plot"></div>   
+    </div>
+
+    <script src="/js/barplotCelltype.js"></script>
+
+{% endblock %}

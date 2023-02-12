@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block content %}
+
+  <!-- Tabs enable user to choose xaxis -->
+  <div class="columns is-mobile is-centered tab-area">
+    <div class="field column is-half">
+      <label class="label">X axis</label>
+      <div class="control">
+        <div class="tabs is-toggle is-centered">
+          <ul>
+            <li id="pvaleTab" class="xaxisType is-active">
+              <a id="pvalueOnClick">Adjusted P-value</a>
+            </li>
+            <li id="overlapTab" class="xaxisType">
+              <a id="overlapOnClick">Fraction of genes in pathway</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Plots below -->
+  <div class="container" id="dataDisplay">
+    <div id="data_plot"></div>   
+  </div>
+
+  <script src="/js/barplotGSEA.js"></script>
+  <script>
+    plotData = {{ plotData | safe }};
+  </script>
+
+{% endblock %}

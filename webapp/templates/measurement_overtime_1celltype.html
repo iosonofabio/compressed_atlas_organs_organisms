@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+{% block content %}
+
+  <div class="columns is-mobile is-centered tab-area">
+    <div id="suggestions">
+      <span id="suggestionsHeader">Suggestions:</span>
+      <div class="suggestGroup" id="geneSuggestions">
+        Add features: 
+        {% for g in similarGenes %}
+          <span class="geneSuggestion suggestButton" id="suggest{{ g }}">{{ g }}</span>
+        {% endfor %}
+      </div>
+      <div class="suggestGroup" id="speciesSuggestions">
+        Other species: 
+        {% for spec in ["mouse", "human"] %}
+          {% if species != spec %}
+          <span class="speciesSuggestion suggestButton" id="suggest{{ spec }}">{{ spec|capitalize }}</span>
+          {% endif %}
+        {% endfor %}
+      </div>
+      <div class="suggestGroup" id="celltypeSuggestions">
+        <span>Other cell types:</span>
+        <span>
+          <div class="dropdown is-hoverable">
+            <div class="dropdown-trigger">
+              <button class="button" aria-haspopup="false" aria-controls="dropdown-menu">
+                <span id="celltypeSuggestionActive">{{celltype}}</span>
+                <span class="icon is-small">
+                  <i class="fas fa-angle-down" aria-hidden="true"></i>
+                </span>
+              </button>
+            </div>
+            <div class="dropdown-menu" id="dropdown-menu" role="menu">
+              <div class="dropdown-content">
+                {% for celltypei in celltypes %}
+                <a id="suggest{{ celltypei }}" href="#" class="dropdown-item suggestButton celltypeSuggestion">
+                  {{ celltypei }}
+                </a>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabs enable user to visualise heat map with normalisation method and hierachical clustered -->
+  <div class="columns is-mobile is-centered tab-area" style="margin-top: 0px;">
+    <div class="field column is-one-quarter">
+      <label class="label">Data values</label>
+      <div class="control">
+        <div class="tabs is-toggle is-centered">
+          <ul>
+            <li id="cpmTab" class="is-active">
+              <a id="CPMOnClick">counts per million</a>
+            </li>
+            <li id="logTab">
+              <a id="log10OnClick">Log10[cpm]</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="field column is-one-quarter">
+      <label class="label">Gene order</label>
+      <div class="control">
+        <div class="tabs is-toggle is-centered">
+          <ul>
+            <li id="originalOrderTab" class="is-active">
+              <a id="originalOnClick">As input</a>
+            </li>
+            <li id="hierachicalTab">
+              <a id="hClusterOnClick">Hierachical clustering</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Plots below -->
+  
+  <div class="container" id="dataDisplay">
+    <div id="plotWrapper" class="columns tab-area is-centered is-mobile" style="margin-top: 0px;">
+      <div id="timepointPlusPlot">
+        <div id="timepoint_info">
+          <span class="has-text-weight-bold">Timepoints:&nbsp&nbsp</span>
+          <span class="P has-tooltip-bottom" data-tooltip="Postnatal Day">
+            <i class=" far fa-question-circle"></i>
+            <span>P&nbsp&nbsp&nbsp</span>
+          </span>
+          <span class="E has-tooltip-bottom" data-tooltip="Embrioic Day">
+            <i class="far fa-question-circle"></i>
+            <span>E&nbsp&nbsp&nbsp</span>
+          </span>
+          <span class="m has-tooltip-bottom" data-tooltip="Months">
+            <i class="far fa-question-circle"></i>
+            <span>m</span>
+          </span>
+        </div>
+
+        <div id="measurementPlot"></div>
+      </div>
+    </div>
+  </div>
+  <script>
+    let celltype = "{{celltype}}";
+  </script>
+  <script src="/js/measurement_overtime_1celltype.js"></script>
+
+{% endblock %}

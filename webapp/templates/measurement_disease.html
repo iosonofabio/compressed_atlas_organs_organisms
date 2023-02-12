@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+{% block content %}
+
+  <!-- Tabs enable user to visualise heat map with normalisation method and hierachical clustered -->
+  <div class="columns is-mobile is-centered tab-area">
+    <div class="field column is-one-third">
+      <div class="dropdown  is-hoverable">
+        <div class="dropdown-trigger">
+          <button class="button" aria-haspopup="true" aria-controls="dropdown-menu">
+            <span>Dataset and time point</span>
+            <span class="icon is-small">
+              <i class="fas fa-angle-down" aria-hidden="true"></i>
+            </span>
+          </button>
+        </div>
+        <div class="dropdown-menu" id="dropdown-menu" role="menu">
+          <div class="dropdown-content">
+            {% for dsTp in datasetTimepoints %}
+              {% if dsTp == "ACZ_P7" %}
+              <a href="#" id="dropdownItem_{{ dsTp }}" class="datasetTimepointDropdown dropdown-item is-active">
+              {% else %}
+              <a href="#" id="dropdownItem_{{ dsTp }}" class="datasetTimepointDropdown dropdown-item">
+              {% endif %}
+              {{ dsTp }}
+            </a>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="columns is-mobile is-centered tab-area" style="margin-top: 0px;">
+    <div class="field column is-one-third">
+      <label class="label">Data scale</label>
+      <div class="control">
+        <div class="tabs is-toggle is-centered">
+          <ul>
+            <li id="log2FCTab" class="is-active">
+              <a id="log2FCOnClick">Log2 Fold Change</a>
+            </li>
+            <li id="cpmTab">
+              <a id="CPMOnClick">CPM(count/million)</a>
+            </li>
+            <li id="logTab">
+              <a id="log10OnClick">Log10</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="field column is-one-quarter">
+      <label class="label">Cell type order</label>
+      <div class="control">
+        <div class="tabs is-toggle is-centered">
+          <ul>
+            <li id="originalOrderTab" class="is-active">
+              <a id="originalOnClick">Original</a>
+            </li>
+            <li id="hierachicalTab">
+              <a id="hClusterOnClick">Hierachical Clustered</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Plots below -->
+  <div class="container" id="dataDisplay">
+    <div id="gene_suggestions"></div>
+    <div id="measurementPlot"></div>   
+  </div>
+
+  <script src="/js/measurement_disease.js"></script>
+
+{% endblock %}

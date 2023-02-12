@@ -1,0 +1,538 @@
+id	name	type	url
+01100	Metabolic pathways	M	https://www.kegg.jp/pathway/map01100
+01110	Biosynthesis of secondary metabolites	M	https://www.kegg.jp/pathway/map01110
+01120	Microbial metabolism in diverse environments	M	https://www.kegg.jp/pathway/map01120
+01200	Carbon metabolism	M R	https://www.kegg.jp/pathway/map01200
+01210	2-Oxocarboxylic acid metabolism	M R	https://www.kegg.jp/pathway/map01210
+01212	Fatty acid metabolism	M R	https://www.kegg.jp/pathway/map01212
+01230	Biosynthesis of amino acids	M R	https://www.kegg.jp/pathway/map01230
+01232	Nucleotide metabolism New!	M R	https://www.kegg.jp/pathway/map01232
+01250	Biosynthesis of nucleotide sugars	M R	https://www.kegg.jp/pathway/map01250
+01240	Biosynthesis of cofactors	M R	https://www.kegg.jp/pathway/map01240
+01220	Degradation of aromatic compounds	M R	https://www.kegg.jp/pathway/map01220
+00010	Glycolysis / Gluconeogenesis	M N	https://www.kegg.jp/pathway/map00010
+00020	Citrate cycle (TCA cycle)	M	https://www.kegg.jp/pathway/map00020
+00030	Pentose phosphate pathway	M	https://www.kegg.jp/pathway/map00030
+00040	Pentose and glucuronate interconversions	M	https://www.kegg.jp/pathway/map00040
+00051	Fructose and mannose metabolism	M	https://www.kegg.jp/pathway/map00051
+00052	Galactose metabolism	M N	https://www.kegg.jp/pathway/map00052
+00053	Ascorbate and aldarate metabolism	M	https://www.kegg.jp/pathway/map00053
+00500	Starch and sucrose metabolism	M N	https://www.kegg.jp/pathway/map00500
+00520	Amino sugar and nucleotide sugar metabolism	M N	https://www.kegg.jp/pathway/map00520
+00620	Pyruvate metabolism	M	https://www.kegg.jp/pathway/map00620
+00630	Glyoxylate and dicarboxylate metabolism	M	https://www.kegg.jp/pathway/map00630
+00640	Propanoate metabolism	M	https://www.kegg.jp/pathway/map00640
+00650	Butanoate metabolism	M	https://www.kegg.jp/pathway/map00650
+00660	C5-Branched dibasic acid metabolism	M	https://www.kegg.jp/pathway/map00660
+00562	Inositol phosphate metabolism	M	https://www.kegg.jp/pathway/map00562
+00190	Oxidative phosphorylation	M	https://www.kegg.jp/pathway/map00190
+00195	Photosynthesis	M	https://www.kegg.jp/pathway/map00195
+00196	Photosynthesis - antenna proteins		https://www.kegg.jp/pathway/hsa00196
+00710	Carbon fixation in photosynthetic organisms	M	https://www.kegg.jp/pathway/map00710
+00720	Carbon fixation pathways in prokaryotes	M	https://www.kegg.jp/pathway/map00720
+00680	Methane metabolism	M	https://www.kegg.jp/pathway/map00680
+00910	Nitrogen metabolism	M	https://www.kegg.jp/pathway/map00910
+00920	Sulfur metabolism	M	https://www.kegg.jp/pathway/map00920
+00061	Fatty acid biosynthesis	M	https://www.kegg.jp/pathway/map00061
+00062	Fatty acid elongation	M	https://www.kegg.jp/pathway/map00062
+00071	Fatty acid degradation	M N	https://www.kegg.jp/pathway/map00071
+00073	Cutin, suberine and wax biosynthesis		https://www.kegg.jp/pathway/hsa00073
+00100	Steroid biosynthesis	M	https://www.kegg.jp/pathway/map00100
+00120	Primary bile acid biosynthesis	M N	https://www.kegg.jp/pathway/map00120
+00121	Secondary bile acid biosynthesis		https://www.kegg.jp/pathway/hsa00121
+00140	Steroid hormone biosynthesis	M N	https://www.kegg.jp/pathway/map00140
+00561	Glycerolipid metabolism	M	https://www.kegg.jp/pathway/map00561
+00564	Glycerophospholipid metabolism	M	https://www.kegg.jp/pathway/map00564
+00565	Ether lipid metabolism	M	https://www.kegg.jp/pathway/map00565
+00600	Sphingolipid metabolism	M N	https://www.kegg.jp/pathway/map00600
+00590	Arachidonic acid metabolism		https://www.kegg.jp/pathway/hsa00590
+00591	Linoleic acid metabolism		https://www.kegg.jp/pathway/hsa00591
+00592	alpha-Linolenic acid metabolism	M	https://www.kegg.jp/pathway/map00592
+01040	Biosynthesis of unsaturated fatty acids	M N	https://www.kegg.jp/pathway/map01040
+00230	Purine metabolism	M N	https://www.kegg.jp/pathway/map00230
+00240	Pyrimidine metabolism	M	https://www.kegg.jp/pathway/map00240
+00250	Alanine, aspartate and glutamate metabolism	M	https://www.kegg.jp/pathway/map00250
+00260	Glycine, serine and threonine metabolism	M	https://www.kegg.jp/pathway/map00260
+00270	Cysteine and methionine metabolism	M	https://www.kegg.jp/pathway/map00270
+00280	Valine, leucine and isoleucine degradation	M N	https://www.kegg.jp/pathway/map00280
+00290	Valine, leucine and isoleucine biosynthesis	M	https://www.kegg.jp/pathway/map00290
+00300	Lysine biosynthesis	M	https://www.kegg.jp/pathway/map00300
+00310	Lysine degradation	M	https://www.kegg.jp/pathway/map00310
+00220	Arginine biosynthesis	M N	https://www.kegg.jp/pathway/map00220
+00330	Arginine and proline metabolism	M	https://www.kegg.jp/pathway/map00330
+00340	Histidine metabolism	M	https://www.kegg.jp/pathway/map00340
+00350	Tyrosine metabolism	M N	https://www.kegg.jp/pathway/map00350
+00360	Phenylalanine metabolism	M	https://www.kegg.jp/pathway/map00360
+00380	Tryptophan metabolism	M	https://www.kegg.jp/pathway/map00380
+00400	Phenylalanine, tyrosine and tryptophan biosynthesis	M N	https://www.kegg.jp/pathway/map00400
+00410	beta-Alanine metabolism	M	https://www.kegg.jp/pathway/map00410
+00430	Taurine and hypotaurine metabolism	M	https://www.kegg.jp/pathway/map00430
+00440	Phosphonate and phosphinate metabolism		https://www.kegg.jp/pathway/hsa00440
+00450	Selenocompound metabolism		https://www.kegg.jp/pathway/hsa00450
+00460	Cyanoamino acid metabolism	M	https://www.kegg.jp/pathway/map00460
+00470	D-Amino acid metabolism		https://www.kegg.jp/pathway/hsa00470
+00480	Glutathione metabolism	M N	https://www.kegg.jp/pathway/map00480
+00510	N-Glycan biosynthesis	M N	https://www.kegg.jp/pathway/map00510
+00513	Various types of N-glycan biosynthesis	M	https://www.kegg.jp/pathway/map00513
+00512	Mucin type O-glycan biosynthesis	M	https://www.kegg.jp/pathway/map00512
+00515	Mannose type O-glycan biosynthesis	M N	https://www.kegg.jp/pathway/map00515
+00514	Other types of O-glycan biosynthesis		https://www.kegg.jp/pathway/hsa00514
+00532	Glycosaminoglycan biosynthesis - chondroitin sulfate / dermatan sulfate	M	https://www.kegg.jp/pathway/map00532
+00534	Glycosaminoglycan biosynthesis - heparan sulfate / heparin	M	https://www.kegg.jp/pathway/map00534
+00533	Glycosaminoglycan biosynthesis - keratan sulfate		https://www.kegg.jp/pathway/hsa00533
+00531	Glycosaminoglycan degradation	M N	https://www.kegg.jp/pathway/map00531
+00563	Glycosylphosphatidylinositol (GPI)-anchor biosynthesis	M N	https://www.kegg.jp/pathway/map00563
+00601	Glycosphingolipid biosynthesis - lacto and neolacto series	M	https://www.kegg.jp/pathway/map00601
+00603	Glycosphingolipid biosynthesis - globo and isoglobo series	M	https://www.kegg.jp/pathway/map00603
+00604	Glycosphingolipid biosynthesis - ganglio series	M	https://www.kegg.jp/pathway/map00604
+00540	Lipopolysaccharide biosynthesis	M	https://www.kegg.jp/pathway/map00540
+00542	O-Antigen repeat unit biosynthesis		https://www.kegg.jp/pathway/hsa00542
+00541	O-Antigen nucleotide sugar biosynthesis	M	https://www.kegg.jp/pathway/map00541
+00550	Peptidoglycan biosynthesis		https://www.kegg.jp/pathway/hsa00550
+00552	Teichoic acid biosynthesis New!		https://www.kegg.jp/pathway/hsa00552
+00511	Other glycan degradation		https://www.kegg.jp/pathway/hsa00511
+00571	Lipoarabinomannan (LAM) biosynthesis		https://www.kegg.jp/pathway/hsa00571
+00572	Arabinogalactan biosynthesis - Mycobacterium		https://www.kegg.jp/pathway/hsa00572
+00730	Thiamine metabolism	M	https://www.kegg.jp/pathway/map00730
+00740	Riboflavin metabolism	M	https://www.kegg.jp/pathway/map00740
+00750	Vitamin B6 metabolism	M	https://www.kegg.jp/pathway/map00750
+00760	Nicotinate and nicotinamide metabolism	M	https://www.kegg.jp/pathway/map00760
+00770	Pantothenate and CoA biosynthesis	M	https://www.kegg.jp/pathway/map00770
+00780	Biotin metabolism	M	https://www.kegg.jp/pathway/map00780
+00785	Lipoic acid metabolism	M	https://www.kegg.jp/pathway/map00785
+00790	Folate biosynthesis	M N	https://www.kegg.jp/pathway/map00790
+00670	One carbon pool by folate	M	https://www.kegg.jp/pathway/map00670
+00830	Retinol metabolism		https://www.kegg.jp/pathway/hsa00830
+00860	Porphyrin metabolism	M N	https://www.kegg.jp/pathway/map00860
+00130	Ubiquinone and other terpenoid-quinone biosynthesis	M	https://www.kegg.jp/pathway/map00130
+00900	Terpenoid backbone biosynthesis	M N	https://www.kegg.jp/pathway/map00900
+00902	Monoterpenoid biosynthesis		https://www.kegg.jp/pathway/hsa00902
+00909	Sesquiterpenoid and triterpenoid biosynthesis		https://www.kegg.jp/pathway/hsa00909
+00904	Diterpenoid biosynthesis	M	https://www.kegg.jp/pathway/map00904
+00906	Carotenoid biosynthesis	M	https://www.kegg.jp/pathway/map00906
+00905	Brassinosteroid biosynthesis	M	https://www.kegg.jp/pathway/map00905
+00981	Insect hormone biosynthesis		https://www.kegg.jp/pathway/hsa00981
+00908	Zeatin biosynthesis		https://www.kegg.jp/pathway/hsa00908
+00903	Limonene and pinene degradation		https://www.kegg.jp/pathway/hsa00903
+00281	Geraniol degradation		https://www.kegg.jp/pathway/hsa00281
+01052	Type I polyketide structures		https://www.kegg.jp/pathway/hsa01052
+00522	Biosynthesis of 12-, 14- and 16-membered macrolides	M	https://www.kegg.jp/pathway/map00522
+01051	Biosynthesis of ansamycins		https://www.kegg.jp/pathway/hsa01051
+01059	Biosynthesis of enediyne antibiotics	M	https://www.kegg.jp/pathway/map01059
+01056	Biosynthesis of type II polyketide backbone	M	https://www.kegg.jp/pathway/map01056
+01057	Biosynthesis of type II polyketide products	M	https://www.kegg.jp/pathway/map01057
+00253	Tetracycline biosynthesis	M	https://www.kegg.jp/pathway/map00253
+00523	Polyketide sugar unit biosynthesis	M	https://www.kegg.jp/pathway/map00523
+01054	Nonribosomal peptide structures		https://www.kegg.jp/pathway/hsa01054
+01053	Biosynthesis of siderophore group nonribosomal peptides		https://www.kegg.jp/pathway/hsa01053
+01055	Biosynthesis of vancomycin group antibiotics		https://www.kegg.jp/pathway/hsa01055
+00940	Phenylpropanoid biosynthesis	M	https://www.kegg.jp/pathway/map00940
+00945	Stilbenoid, diarylheptanoid and gingerol biosynthesis		https://www.kegg.jp/pathway/hsa00945
+00941	Flavonoid biosynthesis	M	https://www.kegg.jp/pathway/map00941
+00944	Flavone and flavonol biosynthesis		https://www.kegg.jp/pathway/hsa00944
+00942	Anthocyanin biosynthesis		https://www.kegg.jp/pathway/hsa00942
+00943	Isoflavonoid biosynthesis	M	https://www.kegg.jp/pathway/map00943
+00901	Indole alkaloid biosynthesis		https://www.kegg.jp/pathway/hsa00901
+00403	Indole diterpene alkaloid biosynthesis	M	https://www.kegg.jp/pathway/map00403
+00950	Isoquinoline alkaloid biosynthesis	M	https://www.kegg.jp/pathway/map00950
+00960	Tropane, piperidine and pyridine alkaloid biosynthesis		https://www.kegg.jp/pathway/hsa00960
+00996	Biosynthesis of various alkaloids		https://www.kegg.jp/pathway/hsa00996
+00232	Caffeine metabolism	M	https://www.kegg.jp/pathway/map00232
+00965	Betalain biosynthesis		https://www.kegg.jp/pathway/hsa00965
+00966	Glucosinolate biosynthesis	M	https://www.kegg.jp/pathway/map00966
+00402	Benzoxazinoid biosynthesis		https://www.kegg.jp/pathway/hsa00402
+00311	Penicillin and cephalosporin biosynthesis	M	https://www.kegg.jp/pathway/map00311
+00332	Carbapenem biosynthesis	M	https://www.kegg.jp/pathway/map00332
+00261	Monobactam biosynthesis	M	https://www.kegg.jp/pathway/map00261
+00331	Clavulanic acid biosynthesis	M	https://www.kegg.jp/pathway/map00331
+00521	Streptomycin biosynthesis	M	https://www.kegg.jp/pathway/map00521
+00524	Neomycin, kanamycin and gentamicin biosynthesis		https://www.kegg.jp/pathway/hsa00524
+00525	Acarbose and validamycin biosynthesis	M	https://www.kegg.jp/pathway/map00525
+00401	Novobiocin biosynthesis		https://www.kegg.jp/pathway/hsa00401
+00404	Staurosporine biosynthesis	M	https://www.kegg.jp/pathway/map00404
+00405	Phenazine biosynthesis	M	https://www.kegg.jp/pathway/map00405
+00333	Prodigiosin biosynthesis	M	https://www.kegg.jp/pathway/map00333
+00254	Aflatoxin biosynthesis	M	https://www.kegg.jp/pathway/map00254
+00998	Biosynthesis of various antibiotics	M	https://www.kegg.jp/pathway/map00998
+00999	Biosynthesis of various plant secondary metabolites	M	https://www.kegg.jp/pathway/map00999
+00997	Biosynthesis of various other secondary metabolites	M	https://www.kegg.jp/pathway/map00997
+00362	Benzoate degradation	M	https://www.kegg.jp/pathway/map00362
+00627	Aminobenzoate degradation	M	https://www.kegg.jp/pathway/map00627
+00364	Fluorobenzoate degradation		https://www.kegg.jp/pathway/hsa00364
+00625	Chloroalkane and chloroalkene degradation		https://www.kegg.jp/pathway/hsa00625
+00361	Chlorocyclohexane and chlorobenzene degradation	M	https://www.kegg.jp/pathway/map00361
+00623	Toluene degradation	M	https://www.kegg.jp/pathway/map00623
+00622	Xylene degradation	M	https://www.kegg.jp/pathway/map00622
+00633	Nitrotoluene degradation		https://www.kegg.jp/pathway/hsa00633
+00642	Ethylbenzene degradation		https://www.kegg.jp/pathway/hsa00642
+00643	Styrene degradation		https://www.kegg.jp/pathway/hsa00643
+00791	Atrazine degradation		https://www.kegg.jp/pathway/hsa00791
+00930	Caprolactam degradation		https://www.kegg.jp/pathway/hsa00930
+00363	Bisphenol degradation		https://www.kegg.jp/pathway/hsa00363
+00621	Dioxin degradation	M	https://www.kegg.jp/pathway/map00621
+00626	Naphthalene degradation	M	https://www.kegg.jp/pathway/map00626
+00624	Polycyclic aromatic hydrocarbon degradation	M	https://www.kegg.jp/pathway/map00624
+00365	Furfural degradation		https://www.kegg.jp/pathway/hsa00365
+00984	Steroid degradation		https://www.kegg.jp/pathway/hsa00984
+00980	Metabolism of xenobiotics by cytochrome P450		https://www.kegg.jp/pathway/hsa00980
+00982	Drug metabolism - cytochrome P450		https://www.kegg.jp/pathway/hsa00982
+00983	Drug metabolism - other enzymes		https://www.kegg.jp/pathway/hsa00983
+01010	Overview of biosynthetic pathways		https://www.kegg.jp/pathway/hsa01010
+01060	Biosynthesis of plant secondary metabolites		https://www.kegg.jp/pathway/hsa01060
+01061	Biosynthesis of phenylpropanoids		https://www.kegg.jp/pathway/hsa01061
+01062	Biosynthesis of terpenoids and steroids		https://www.kegg.jp/pathway/hsa01062
+01063	Biosynthesis of alkaloids derived from shikimate pathway		https://www.kegg.jp/pathway/hsa01063
+01064	Biosynthesis of alkaloids derived from ornithine, lysine and nicotinic acid		https://www.kegg.jp/pathway/hsa01064
+01065	Biosynthesis of alkaloids derived from histidine and purine		https://www.kegg.jp/pathway/hsa01065
+01066	Biosynthesis of alkaloids derived from terpenoid and polyketide		https://www.kegg.jp/pathway/hsa01066
+01070	Biosynthesis of plant hormones		https://www.kegg.jp/pathway/hsa01070
+03020	RNA polymerase		https://www.kegg.jp/pathway/hsa03020
+03022	Basal transcription factors		https://www.kegg.jp/pathway/hsa03022
+03040	Spliceosome		https://www.kegg.jp/pathway/hsa03040
+03010	Ribosome		https://www.kegg.jp/pathway/hsa03010
+00970	Aminoacyl-tRNA biosynthesis		https://www.kegg.jp/pathway/hsa00970
+03013	Nucleocytoplasmic transport		https://www.kegg.jp/pathway/hsa03013
+03015	mRNA surveillance pathway		https://www.kegg.jp/pathway/hsa03015
+03008	Ribosome biogenesis in eukaryotes		https://www.kegg.jp/pathway/hsa03008
+03060	Protein export		https://www.kegg.jp/pathway/hsa03060
+04141	Protein processing in endoplasmic reticulum	N	https://www.kegg.jp/pathway/hsa04141
+04130	SNARE interactions in vesicular transport		https://www.kegg.jp/pathway/hsa04130
+04120	Ubiquitin mediated proteolysis		https://www.kegg.jp/pathway/hsa04120
+04122	Sulfur relay system		https://www.kegg.jp/pathway/hsa04122
+03050	Proteasome		https://www.kegg.jp/pathway/hsa03050
+03018	RNA degradation		https://www.kegg.jp/pathway/hsa03018
+03030	DNA replication		https://www.kegg.jp/pathway/hsa03030
+03410	Base excision repair		https://www.kegg.jp/pathway/hsa03410
+03420	Nucleotide excision repair		https://www.kegg.jp/pathway/hsa03420
+03430	Mismatch repair		https://www.kegg.jp/pathway/hsa03430
+03440	Homologous recombination		https://www.kegg.jp/pathway/hsa03440
+03450	Non-homologous end-joining		https://www.kegg.jp/pathway/hsa03450
+03460	Fanconi anemia pathway		https://www.kegg.jp/pathway/hsa03460
+03230	Viral genome structure		https://www.kegg.jp/pathway/hsa03230
+03240	Viral replication		https://www.kegg.jp/pathway/hsa03240
+02010	ABC transporters		https://www.kegg.jp/pathway/hsa02010
+02060	Phosphotransferase system (PTS)		https://www.kegg.jp/pathway/hsa02060
+03070	Bacterial secretion system		https://www.kegg.jp/pathway/hsa03070
+02020	Two-component system		https://www.kegg.jp/pathway/hsa02020
+04010	MAPK signaling pathway	N	https://www.kegg.jp/pathway/hsa04010
+04012	ErbB signaling pathway	N	https://www.kegg.jp/pathway/hsa04012
+04014	Ras signaling pathway	N	https://www.kegg.jp/pathway/hsa04014
+04015	Rap1 signaling pathway		https://www.kegg.jp/pathway/hsa04015
+04310	Wnt signaling pathway	N	https://www.kegg.jp/pathway/hsa04310
+04330	Notch signaling pathway	N	https://www.kegg.jp/pathway/hsa04330
+04340	Hedgehog signaling pathway	N	https://www.kegg.jp/pathway/hsa04340
+04350	TGF-beta signaling pathway	N	https://www.kegg.jp/pathway/hsa04350
+04390	Hippo signaling pathway		https://www.kegg.jp/pathway/hsa04390
+04392	Hippo signaling pathway - multiple species		https://www.kegg.jp/pathway/hsa04392
+04370	VEGF signaling pathway		https://www.kegg.jp/pathway/hsa04370
+04371	Apelin signaling pathway		https://www.kegg.jp/pathway/hsa04371
+04630	JAK-STAT signaling pathway	N	https://www.kegg.jp/pathway/hsa04630
+04064	NF-kappa B signaling pathway	N	https://www.kegg.jp/pathway/hsa04064
+04668	TNF signaling pathway	N	https://www.kegg.jp/pathway/hsa04668
+04066	HIF-1 signaling pathway	N	https://www.kegg.jp/pathway/hsa04066
+04068	FoxO signaling pathway		https://www.kegg.jp/pathway/hsa04068
+04020	Calcium signaling pathway	N	https://www.kegg.jp/pathway/hsa04020
+04070	Phosphatidylinositol signaling system		https://www.kegg.jp/pathway/hsa04070
+04072	Phospholipase D signaling pathway		https://www.kegg.jp/pathway/hsa04072
+04071	Sphingolipid signaling pathway		https://www.kegg.jp/pathway/hsa04071
+04024	cAMP signaling pathway	N	https://www.kegg.jp/pathway/hsa04024
+04022	cGMP-PKG signaling pathway		https://www.kegg.jp/pathway/hsa04022
+04151	PI3K-Akt signaling pathway	N	https://www.kegg.jp/pathway/hsa04151
+04152	AMPK signaling pathway		https://www.kegg.jp/pathway/hsa04152
+04150	mTOR signaling pathway	N	https://www.kegg.jp/pathway/hsa04150
+04075	Plant hormone signal transduction		https://www.kegg.jp/pathway/hsa04075
+04080	Neuroactive ligand-receptor interaction		https://www.kegg.jp/pathway/hsa04080
+04060	Cytokine-cytokine receptor interaction		https://www.kegg.jp/pathway/hsa04060
+04061	Viral protein interaction with cytokine and cytokine receptor		https://www.kegg.jp/pathway/hsa04061
+04512	ECM-receptor interaction		https://www.kegg.jp/pathway/hsa04512
+04514	Cell adhesion molecules		https://www.kegg.jp/pathway/hsa04514
+04144	Endocytosis		https://www.kegg.jp/pathway/hsa04144
+04145	Phagosome	N	https://www.kegg.jp/pathway/hsa04145
+04142	Lysosome		https://www.kegg.jp/pathway/hsa04142
+04146	Peroxisome		https://www.kegg.jp/pathway/hsa04146
+04140	Autophagy - animal	N	https://www.kegg.jp/pathway/hsa04140
+04136	Autophagy - other		https://www.kegg.jp/pathway/hsa04136
+04137	Mitophagy - animal	N	https://www.kegg.jp/pathway/hsa04137
+04110	Cell cycle	N	https://www.kegg.jp/pathway/hsa04110
+04112	Cell cycle - Caulobacter		https://www.kegg.jp/pathway/hsa04112
+04114	Oocyte meiosis		https://www.kegg.jp/pathway/hsa04114
+04210	Apoptosis	N	https://www.kegg.jp/pathway/hsa04210
+04215	Apoptosis - multiple species		https://www.kegg.jp/pathway/hsa04215
+04216	Ferroptosis		https://www.kegg.jp/pathway/hsa04216
+04217	Necroptosis		https://www.kegg.jp/pathway/hsa04217
+04115	p53 signaling pathway		https://www.kegg.jp/pathway/hsa04115
+04218	Cellular senescence		https://www.kegg.jp/pathway/hsa04218
+04510	Focal adhesion	N	https://www.kegg.jp/pathway/hsa04510
+04520	Adherens junction		https://www.kegg.jp/pathway/hsa04520
+04530	Tight junction	N	https://www.kegg.jp/pathway/hsa04530
+04540	Gap junction		https://www.kegg.jp/pathway/hsa04540
+04550	Signaling pathways regulating pluripotency of stem cells		https://www.kegg.jp/pathway/hsa04550
+02024	Quorum sensing		https://www.kegg.jp/pathway/hsa02024
+05111	Biofilm formation - Vibrio cholerae		https://www.kegg.jp/pathway/hsa05111
+02025	Biofilm formation - Pseudomonas aeruginosa		https://www.kegg.jp/pathway/hsa02025
+02026	Biofilm formation - Escherichia coli		https://www.kegg.jp/pathway/hsa02026
+02030	Bacterial chemotaxis		https://www.kegg.jp/pathway/hsa02030
+02040	Flagellar assembly		https://www.kegg.jp/pathway/hsa02040
+04810	Regulation of actin cytoskeleton	N	https://www.kegg.jp/pathway/hsa04810
+04640	Hematopoietic cell lineage		https://www.kegg.jp/pathway/hsa04640
+04610	Complement and coagulation cascades	N	https://www.kegg.jp/pathway/hsa04610
+04611	Platelet activation		https://www.kegg.jp/pathway/hsa04611
+04613	Neutrophil extracellular trap formation		https://www.kegg.jp/pathway/hsa04613
+04620	Toll-like receptor signaling pathway	N	https://www.kegg.jp/pathway/hsa04620
+04624	Toll and Imd signaling pathway		https://www.kegg.jp/pathway/hsa04624
+04621	NOD-like receptor signaling pathway	N	https://www.kegg.jp/pathway/hsa04621
+04622	RIG-I-like receptor signaling pathway	N	https://www.kegg.jp/pathway/hsa04622
+04623	Cytosolic DNA-sensing pathway	N	https://www.kegg.jp/pathway/hsa04623
+04625	C-type lectin receptor signaling pathway		https://www.kegg.jp/pathway/hsa04625
+04650	Natural killer cell mediated cytotoxicity		https://www.kegg.jp/pathway/hsa04650
+04612	Antigen processing and presentation	N	https://www.kegg.jp/pathway/hsa04612
+04660	T cell receptor signaling pathway	N	https://www.kegg.jp/pathway/hsa04660
+04658	Th1 and Th2 cell differentiation		https://www.kegg.jp/pathway/hsa04658
+04659	Th17 cell differentiation		https://www.kegg.jp/pathway/hsa04659
+04657	IL-17 signaling pathway		https://www.kegg.jp/pathway/hsa04657
+04662	B cell receptor signaling pathway	N	https://www.kegg.jp/pathway/hsa04662
+04664	Fc epsilon RI signaling pathway		https://www.kegg.jp/pathway/hsa04664
+04666	Fc gamma R-mediated phagocytosis	N	https://www.kegg.jp/pathway/hsa04666
+04670	Leukocyte transendothelial migration		https://www.kegg.jp/pathway/hsa04670
+04672	Intestinal immune network for IgA production		https://www.kegg.jp/pathway/hsa04672
+04062	Chemokine signaling pathway	N	https://www.kegg.jp/pathway/hsa04062
+04911	Insulin secretion		https://www.kegg.jp/pathway/hsa04911
+04910	Insulin signaling pathway		https://www.kegg.jp/pathway/hsa04910
+04922	Glucagon signaling pathway		https://www.kegg.jp/pathway/hsa04922
+04923	Regulation of lipolysis in adipocytes		https://www.kegg.jp/pathway/hsa04923
+04920	Adipocytokine signaling pathway		https://www.kegg.jp/pathway/hsa04920
+03320	PPAR signaling pathway		https://www.kegg.jp/pathway/hsa03320
+04929	GnRH secretion	N	https://www.kegg.jp/pathway/hsa04929
+04912	GnRH signaling pathway	N	https://www.kegg.jp/pathway/hsa04912
+04913	Ovarian steroidogenesis		https://www.kegg.jp/pathway/hsa04913
+04915	Estrogen signaling pathway	N	https://www.kegg.jp/pathway/hsa04915
+04914	Progesterone-mediated oocyte maturation		https://www.kegg.jp/pathway/hsa04914
+04917	Prolactin signaling pathway	N	https://www.kegg.jp/pathway/hsa04917
+04921	Oxytocin signaling pathway		https://www.kegg.jp/pathway/hsa04921
+04926	Relaxin signaling pathway		https://www.kegg.jp/pathway/hsa04926
+04935	Growth hormone synthesis, secretion and action	N	https://www.kegg.jp/pathway/hsa04935
+04918	Thyroid hormone synthesis	N	https://www.kegg.jp/pathway/hsa04918
+04919	Thyroid hormone signaling pathway	N	https://www.kegg.jp/pathway/hsa04919
+04928	Parathyroid hormone synthesis, secretion and action	N	https://www.kegg.jp/pathway/hsa04928
+04916	Melanogenesis		https://www.kegg.jp/pathway/hsa04916
+04924	Renin secretion		https://www.kegg.jp/pathway/hsa04924
+04614	Renin-angiotensin system		https://www.kegg.jp/pathway/hsa04614
+04925	Aldosterone synthesis and secretion	N	https://www.kegg.jp/pathway/hsa04925
+04927	Cortisol synthesis and secretion	N	https://www.kegg.jp/pathway/hsa04927
+04260	Cardiac muscle contraction		https://www.kegg.jp/pathway/hsa04260
+04261	Adrenergic signaling in cardiomyocytes	N	https://www.kegg.jp/pathway/hsa04261
+04270	Vascular smooth muscle contraction		https://www.kegg.jp/pathway/hsa04270
+04970	Salivary secretion		https://www.kegg.jp/pathway/hsa04970
+04971	Gastric acid secretion		https://www.kegg.jp/pathway/hsa04971
+04972	Pancreatic secretion		https://www.kegg.jp/pathway/hsa04972
+04976	Bile secretion		https://www.kegg.jp/pathway/hsa04976
+04973	Carbohydrate digestion and absorption		https://www.kegg.jp/pathway/hsa04973
+04974	Protein digestion and absorption		https://www.kegg.jp/pathway/hsa04974
+04975	Fat digestion and absorption		https://www.kegg.jp/pathway/hsa04975
+04979	Cholesterol metabolism	N	https://www.kegg.jp/pathway/hsa04979
+04977	Vitamin digestion and absorption		https://www.kegg.jp/pathway/hsa04977
+04978	Mineral absorption		https://www.kegg.jp/pathway/hsa04978
+04962	Vasopressin-regulated water reabsorption	N	https://www.kegg.jp/pathway/hsa04962
+04960	Aldosterone-regulated sodium reabsorption		https://www.kegg.jp/pathway/hsa04960
+04961	Endocrine and other factor-regulated calcium reabsorption	N	https://www.kegg.jp/pathway/hsa04961
+04964	Proximal tubule bicarbonate reclamation		https://www.kegg.jp/pathway/hsa04964
+04966	Collecting duct acid secretion		https://www.kegg.jp/pathway/hsa04966
+04724	Glutamatergic synapse	N	https://www.kegg.jp/pathway/hsa04724
+04727	GABAergic synapse		https://www.kegg.jp/pathway/hsa04727
+04725	Cholinergic synapse		https://www.kegg.jp/pathway/hsa04725
+04728	Dopaminergic synapse	N	https://www.kegg.jp/pathway/hsa04728
+04726	Serotonergic synapse		https://www.kegg.jp/pathway/hsa04726
+04720	Long-term potentiation	N	https://www.kegg.jp/pathway/hsa04720
+04730	Long-term depression	N	https://www.kegg.jp/pathway/hsa04730
+04723	Retrograde endocannabinoid signaling		https://www.kegg.jp/pathway/hsa04723
+04721	Synaptic vesicle cycle		https://www.kegg.jp/pathway/hsa04721
+04722	Neurotrophin signaling pathway		https://www.kegg.jp/pathway/hsa04722
+04744	Phototransduction		https://www.kegg.jp/pathway/hsa04744
+04740	Olfactory transduction		https://www.kegg.jp/pathway/hsa04740
+04742	Taste transduction		https://www.kegg.jp/pathway/hsa04742
+04750	Inflammatory mediator regulation of TRP channels		https://www.kegg.jp/pathway/hsa04750
+04320	Dorso-ventral axis formation		https://www.kegg.jp/pathway/hsa04320
+04360	Axon guidance		https://www.kegg.jp/pathway/hsa04360
+04361	Axon regeneration		https://www.kegg.jp/pathway/hsa04361
+04380	Osteoclast differentiation		https://www.kegg.jp/pathway/hsa04380
+04211	Longevity regulating pathway		https://www.kegg.jp/pathway/hsa04211
+04212	Longevity regulating pathway - worm		https://www.kegg.jp/pathway/hsa04212
+04213	Longevity regulating pathway - multiple species		https://www.kegg.jp/pathway/hsa04213
+04710	Circadian rhythm		https://www.kegg.jp/pathway/hsa04710
+04713	Circadian entrainment		https://www.kegg.jp/pathway/hsa04713
+04714	Thermogenesis		https://www.kegg.jp/pathway/hsa04714
+04626	Plant-pathogen interaction		https://www.kegg.jp/pathway/hsa04626
+05200	Pathways in cancer	N	https://www.kegg.jp/pathway/hsa05200
+05202	Transcriptional misregulation in cancer		https://www.kegg.jp/pathway/hsa05202
+05206	MicroRNAs in cancer		https://www.kegg.jp/pathway/hsa05206
+05205	Proteoglycans in cancer		https://www.kegg.jp/pathway/hsa05205
+05204	Chemical carcinogenesis - DNA adducts	N	https://www.kegg.jp/pathway/hsa05204
+05207	Chemical carcinogenesis - receptor activation	N	https://www.kegg.jp/pathway/hsa05207
+05208	Chemical carcinogenesis - reactive oxygen species	N	https://www.kegg.jp/pathway/hsa05208
+05203	Viral carcinogenesis		https://www.kegg.jp/pathway/hsa05203
+05230	Central carbon metabolism in cancer		https://www.kegg.jp/pathway/hsa05230
+05231	Choline metabolism in cancer		https://www.kegg.jp/pathway/hsa05231
+05235	PD-L1 expression and PD-1 checkpoint pathway in cancer		https://www.kegg.jp/pathway/hsa05235
+05210	Colorectal cancer	N	https://www.kegg.jp/pathway/hsa05210
+05212	Pancreatic cancer	N	https://www.kegg.jp/pathway/hsa05212
+05225	Hepatocellular carcinoma	N	https://www.kegg.jp/pathway/hsa05225
+05226	Gastric cancer	N	https://www.kegg.jp/pathway/hsa05226
+05214	Glioma	N	https://www.kegg.jp/pathway/hsa05214
+05216	Thyroid cancer	N	https://www.kegg.jp/pathway/hsa05216
+05221	Acute myeloid leukemia	N	https://www.kegg.jp/pathway/hsa05221
+05220	Chronic myeloid leukemia	N	https://www.kegg.jp/pathway/hsa05220
+05217	Basal cell carcinoma	N	https://www.kegg.jp/pathway/hsa05217
+05218	Melanoma	N	https://www.kegg.jp/pathway/hsa05218
+05211	Renal cell carcinoma	N	https://www.kegg.jp/pathway/hsa05211
+05219	Bladder cancer	N	https://www.kegg.jp/pathway/hsa05219
+05215	Prostate cancer	N	https://www.kegg.jp/pathway/hsa05215
+05213	Endometrial cancer	N	https://www.kegg.jp/pathway/hsa05213
+05224	Breast cancer	N	https://www.kegg.jp/pathway/hsa05224
+05222	Small cell lung cancer	N	https://www.kegg.jp/pathway/hsa05222
+05223	Non-small cell lung cancer	N	https://www.kegg.jp/pathway/hsa05223
+05166	Human T-cell leukemia virus 1 infection	N	https://www.kegg.jp/pathway/hsa05166
+05170	Human immunodeficiency virus 1 infection	N	https://www.kegg.jp/pathway/hsa05170
+05161	Hepatitis B	N	https://www.kegg.jp/pathway/hsa05161
+05160	Hepatitis C	N	https://www.kegg.jp/pathway/hsa05160
+05171	Coronavirus disease - COVID-19	N	https://www.kegg.jp/pathway/hsa05171
+05164	Influenza A	N	https://www.kegg.jp/pathway/hsa05164
+05162	Measles	N	https://www.kegg.jp/pathway/hsa05162
+05168	Herpes simplex virus 1 infection	N	https://www.kegg.jp/pathway/hsa05168
+05163	Human cytomegalovirus infection	N	https://www.kegg.jp/pathway/hsa05163
+05167	Kaposi sarcoma-associated herpesvirus infection	N	https://www.kegg.jp/pathway/hsa05167
+05169	Epstein-Barr virus infection	N	https://www.kegg.jp/pathway/hsa05169
+05165	Human papillomavirus infection	N	https://www.kegg.jp/pathway/hsa05165
+05110	Vibrio cholerae infection		https://www.kegg.jp/pathway/hsa05110
+05120	Epithelial cell signaling in Helicobacter pylori infection		https://www.kegg.jp/pathway/hsa05120
+05130	Pathogenic Escherichia coli infection	N	https://www.kegg.jp/pathway/hsa05130
+05132	Salmonella infection	N	https://www.kegg.jp/pathway/hsa05132
+05131	Shigellosis	N	https://www.kegg.jp/pathway/hsa05131
+05135	Yersinia infection	N	https://www.kegg.jp/pathway/hsa05135
+05133	Pertussis		https://www.kegg.jp/pathway/hsa05133
+05134	Legionellosis		https://www.kegg.jp/pathway/hsa05134
+05150	Staphylococcus aureus infection		https://www.kegg.jp/pathway/hsa05150
+05152	Tuberculosis		https://www.kegg.jp/pathway/hsa05152
+05100	Bacterial invasion of epithelial cells		https://www.kegg.jp/pathway/hsa05100
+05146	Amoebiasis		https://www.kegg.jp/pathway/hsa05146
+05144	Malaria		https://www.kegg.jp/pathway/hsa05144
+05145	Toxoplasmosis		https://www.kegg.jp/pathway/hsa05145
+05140	Leishmaniasis		https://www.kegg.jp/pathway/hsa05140
+05142	Chagas disease		https://www.kegg.jp/pathway/hsa05142
+05143	African trypanosomiasis		https://www.kegg.jp/pathway/hsa05143
+05310	Asthma		https://www.kegg.jp/pathway/hsa05310
+05322	Systemic lupus erythematosus		https://www.kegg.jp/pathway/hsa05322
+05323	Rheumatoid arthritis		https://www.kegg.jp/pathway/hsa05323
+05320	Autoimmune thyroid disease		https://www.kegg.jp/pathway/hsa05320
+05321	Inflammatory bowel disease		https://www.kegg.jp/pathway/hsa05321
+05330	Allograft rejection		https://www.kegg.jp/pathway/hsa05330
+05332	Graft-versus-host disease		https://www.kegg.jp/pathway/hsa05332
+05340	Primary immunodeficiency		https://www.kegg.jp/pathway/hsa05340
+05010	Alzheimer disease	N	https://www.kegg.jp/pathway/hsa05010
+05012	Parkinson disease	N	https://www.kegg.jp/pathway/hsa05012
+05014	Amyotrophic lateral sclerosis	N	https://www.kegg.jp/pathway/hsa05014
+05016	Huntington disease	N	https://www.kegg.jp/pathway/hsa05016
+05017	Spinocerebellar ataxia	N	https://www.kegg.jp/pathway/hsa05017
+05020	Prion disease	N	https://www.kegg.jp/pathway/hsa05020
+05022	Pathways of neurodegeneration - multiple diseases	N	https://www.kegg.jp/pathway/hsa05022
+05030	Cocaine addiction		https://www.kegg.jp/pathway/hsa05030
+05031	Amphetamine addiction		https://www.kegg.jp/pathway/hsa05031
+05032	Morphine addiction		https://www.kegg.jp/pathway/hsa05032
+05033	Nicotine addiction		https://www.kegg.jp/pathway/hsa05033
+05034	Alcoholism		https://www.kegg.jp/pathway/hsa05034
+05417	Lipid and atherosclerosis		https://www.kegg.jp/pathway/hsa05417
+05418	Fluid shear stress and atherosclerosis		https://www.kegg.jp/pathway/hsa05418
+05410	Hypertrophic cardiomyopathy		https://www.kegg.jp/pathway/hsa05410
+05412	Arrhythmogenic right ventricular cardiomyopathy		https://www.kegg.jp/pathway/hsa05412
+05414	Dilated cardiomyopathy		https://www.kegg.jp/pathway/hsa05414
+05415	Diabetic cardiomyopathy		https://www.kegg.jp/pathway/hsa05415
+05416	Viral myocarditis		https://www.kegg.jp/pathway/hsa05416
+04930	Type II diabetes mellitus		https://www.kegg.jp/pathway/hsa04930
+04940	Type I diabetes mellitus		https://www.kegg.jp/pathway/hsa04940
+04950	Maturity onset diabetes of the young		https://www.kegg.jp/pathway/hsa04950
+04936	Alcoholic liver disease		https://www.kegg.jp/pathway/hsa04936
+04932	Non-alcoholic fatty liver disease		https://www.kegg.jp/pathway/hsa04932
+04931	Insulin resistance		https://www.kegg.jp/pathway/hsa04931
+04933	AGE-RAGE signaling pathway in diabetic complications		https://www.kegg.jp/pathway/hsa04933
+04934	Cushing syndrome	N	https://www.kegg.jp/pathway/hsa04934
+01501	beta-Lactam resistance		https://www.kegg.jp/pathway/hsa01501
+01502	Vancomycin resistance		https://www.kegg.jp/pathway/hsa01502
+01503	Cationic antimicrobial peptide (CAMP) resistance		https://www.kegg.jp/pathway/hsa01503
+01521	EGFR tyrosine kinase inhibitor resistance		https://www.kegg.jp/pathway/hsa01521
+01524	Platinum drug resistance		https://www.kegg.jp/pathway/hsa01524
+01523	Antifolate resistance		https://www.kegg.jp/pathway/hsa01523
+01522	Endocrine resistance		https://www.kegg.jp/pathway/hsa01522
+07011	Penicillins		https://www.kegg.jp/pathway/hsa07011
+07012	Cephalosporins - parenteral agents		https://www.kegg.jp/pathway/hsa07012
+07013	Cephalosporins - oral agents		https://www.kegg.jp/pathway/hsa07013
+07021	Aminoglycosides		https://www.kegg.jp/pathway/hsa07021
+07019	Tetracyclines		https://www.kegg.jp/pathway/hsa07019
+07020	Macrolides and ketolides		https://www.kegg.jp/pathway/hsa07020
+07014	Quinolones		https://www.kegg.jp/pathway/hsa07014
+07023	Rifamycins		https://www.kegg.jp/pathway/hsa07023
+07026	Antifungal agents		https://www.kegg.jp/pathway/hsa07026
+07044	Antiviral agents		https://www.kegg.jp/pathway/hsa07044
+07053	Anti-HIV agents		https://www.kegg.jp/pathway/hsa07053
+07040	Antineoplastics - alkylating agents		https://www.kegg.jp/pathway/hsa07040
+07041	Antineoplastics - antimetabolic agents		https://www.kegg.jp/pathway/hsa07041
+07042	Antineoplastics - agents from natural products		https://www.kegg.jp/pathway/hsa07042
+07043	Antineoplastics - hormones		https://www.kegg.jp/pathway/hsa07043
+07045	Antineoplastics - protein kinase inhibitors		https://www.kegg.jp/pathway/hsa07045
+07032	Hypnotics		https://www.kegg.jp/pathway/hsa07032
+07030	Anxiolytics		https://www.kegg.jp/pathway/hsa07030
+07033	Anticonvulsants		https://www.kegg.jp/pathway/hsa07033
+07015	Local analgesics		https://www.kegg.jp/pathway/hsa07015
+07039	Opioid analgesics		https://www.kegg.jp/pathway/hsa07039
+07028	Antipsychotics		https://www.kegg.jp/pathway/hsa07028
+07029	Antipsychotics - phenothiazines		https://www.kegg.jp/pathway/hsa07029
+07031	Antipsychotics - butyrophenones		https://www.kegg.jp/pathway/hsa07031
+07027	Antidepressants		https://www.kegg.jp/pathway/hsa07027
+07056	Agents for Alzheimer-type dementia		https://www.kegg.jp/pathway/hsa07056
+07057	Antiparkinsonian agents		https://www.kegg.jp/pathway/hsa07057
+07055	Sulfonamide derivatives - overview		https://www.kegg.jp/pathway/hsa07055
+07016	Sulfonamide derivatives - sulfa drugs		https://www.kegg.jp/pathway/hsa07016
+07017	Sulfonamide derivatives - diuretics		https://www.kegg.jp/pathway/hsa07017
+07018	Sulfonamide derivatives - hypoglycemic agents		https://www.kegg.jp/pathway/hsa07018
+07037	Antiarrhythmic drugs		https://www.kegg.jp/pathway/hsa07037
+07038	Antiulcer drugs		https://www.kegg.jp/pathway/hsa07038
+07046	Immunosuppressive agents		https://www.kegg.jp/pathway/hsa07046
+07047	Osteoporosis drugs		https://www.kegg.jp/pathway/hsa07047
+07048	Antimigraines		https://www.kegg.jp/pathway/hsa07048
+07049	Antithrombosis agents		https://www.kegg.jp/pathway/hsa07049
+07050	Antirheumatics - DMARDs and biological agents		https://www.kegg.jp/pathway/hsa07050
+07051	Antidiabetics		https://www.kegg.jp/pathway/hsa07051
+07052	Antidyslipidemic agents		https://www.kegg.jp/pathway/hsa07052
+07054	Antiglaucoma agents		https://www.kegg.jp/pathway/hsa07054
+07220	Cholinergic and anticholinergic drugs		https://www.kegg.jp/pathway/hsa07220
+07215	alpha-Adrenergic receptor agonists/antagonists		https://www.kegg.jp/pathway/hsa07215
+07214	beta-Adrenergic receptor agonists/antagonists		https://www.kegg.jp/pathway/hsa07214
+07213	Dopamine receptor agonists/antagonists		https://www.kegg.jp/pathway/hsa07213
+07212	Histamine H1 receptor antagonists		https://www.kegg.jp/pathway/hsa07212
+07227	Histamine H2/H3 receptor agonists/antagonists		https://www.kegg.jp/pathway/hsa07227
+07211	Serotonin receptor agonists/antagonists		https://www.kegg.jp/pathway/hsa07211
+07228	Eicosanoid receptor agonists/antagonists		https://www.kegg.jp/pathway/hsa07228
+07224	Opioid receptor agonists/antagonists		https://www.kegg.jp/pathway/hsa07224
+07229	Angiotensin receptor and endothelin receptor antagonists		https://www.kegg.jp/pathway/hsa07229
+07225	Glucocorticoid and mineralocorticoid receptor agonists/antagonists		https://www.kegg.jp/pathway/hsa07225
+07226	Progesterone, androgen and estrogen receptor agonists/antagonists		https://www.kegg.jp/pathway/hsa07226
+07223	Retinoic acid receptor (RAR) and retinoid X receptor (RXR) agonists/antagonists		https://www.kegg.jp/pathway/hsa07223
+07222	Peroxisome proliferator-activated receptor (PPAR) agonists		https://www.kegg.jp/pathway/hsa07222
+07221	Nicotinic cholinergic receptor antagonists		https://www.kegg.jp/pathway/hsa07221
+07230	GABA-A receptor agonists/antagonists		https://www.kegg.jp/pathway/hsa07230
+07036	Calcium channel blocking drugs		https://www.kegg.jp/pathway/hsa07036
+07231	Sodium channel blocking drugs		https://www.kegg.jp/pathway/hsa07231
+07232	Potassium channel blocking and opening drugs		https://www.kegg.jp/pathway/hsa07232
+07235	N-Methyl-D-aspartic acid (NMDA) receptor antagonists		https://www.kegg.jp/pathway/hsa07235
+07233	Ion transporter inhibitors		https://www.kegg.jp/pathway/hsa07233
+07234	Neurotransmitter transporter inhibitors		https://www.kegg.jp/pathway/hsa07234
+07216	Catecholamine transferase inhibitors		https://www.kegg.jp/pathway/hsa07216
+07219	Cyclooxygenase inhibitors		https://www.kegg.jp/pathway/hsa07219
+07024	HMG-CoA reductase inhibitors		https://www.kegg.jp/pathway/hsa07024
+07217	Renin-angiotensin system inhibitors		https://www.kegg.jp/pathway/hsa07217
+07218	HIV protease inhibitors		https://www.kegg.jp/pathway/hsa07218
+07025	Quinolines		https://www.kegg.jp/pathway/hsa07025
+07034	Eicosanoids		https://www.kegg.jp/pathway/hsa07034
+07035	Prostaglandins		https://www.kegg.jp/pathway/hsa07035
+07110	Benzoic acid family		https://www.kegg.jp/pathway/hsa07110
+07112	1,2-Diphenyl substitution family		https://www.kegg.jp/pathway/hsa07112
+07114	Naphthalene family		https://www.kegg.jp/pathway/hsa07114
+07117	Benzodiazepine family		https://www.kegg.jp/pathway/hsa07117

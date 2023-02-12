@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block content %}
+
+    <div class="columns is-mobile is-centered tab-area">
+      <div class="column">
+        <h1 class="title">{{timepoint}}</h1>
+        <div class="columns is-centered" style="padding-top: 0px;">
+          <div class="field column is-third">
+            <div class="cthead">
+            Major
+            </div>
+            {% for ct in celltypes['major'] %}
+              <li>{{ct}}</li>
+            {% endfor %}
+          </div>
+          <div class="field column is-third">
+            <div class="cthead">
+            Minor
+            </div>
+            {% for ct in celltypes['minor'] %}
+              <li>{{ct}}</li>
+            {% endfor %}
+          </div>
+          <div class="field column is-third">
+            <div class="cthead">
+            Rare
+            </div>
+            {% for ct in celltypes['rare'] %}
+              <li>{{ct}}</li>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+{% endblock %}

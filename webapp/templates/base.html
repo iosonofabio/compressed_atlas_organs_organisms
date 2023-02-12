@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Compressed Atlas of the Heart</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.3/css/bulma.min.css">
+
+    <link rel="stylesheet" href="/css/bulma-tooltip.min.css">
+    <script src="https://kit.fontawesome.com/54e7398ce1.js" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="/css/index.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdn.plot.ly/plotly-2.8.3.min.js"></script>
+    <!-- <link rel="stylesheet" href="//use.fontawesome.com/releases/v5.0.7/css/all.css">   -->
+    <!--
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.3/css/all.css" integrity="sha384-UHRtZLI+pbxtHCWp1t77Bi1L4ZtiqrqD80Kn4Z8NTSRyMA2Fd33n5dQ8lWUE00s/" crossorigin="anonymous"> -->
+
+  </head>
+  <body>
+  <!-- Navigation Bar -->
+  <nav class="navbar is-fixed-top has-shadow is-spaced is-light">
+    <div class="navbar-brand">
+      <a class="navbar-item">
+        <h1 class="title is-5">Compressed Atlas of the {{tissue}}</h1>
+      </a>
+    </div>
+    <div class="navbar-start">
+      <a href="/" class="button is-ghost">
+        <i id="homeButton" class="fa-solid fa-heart-pulse"></i>
+      </a>
+      <a href="{{ url_for('measurement_by_celltype') }}" class="button is-ghost has-text-info">
+         By cell type
+      </a>
+      <a href="{{ url_for('measurement_overtime_1feature') }}" class="button is-ghost has-text-info">
+          Over time (1 feature)
+      </a>
+      <a href="{{ url_for('measurement_overtime_1celltype') }}" class="button is-ghost has-text-info">
+          Over time (1 cell type)
+      </a>
+      <a href="{{ url_for('measurement_disease') }}" class="button is-ghost has-text-info">
+        {{condition}}
+      </a>
+  </div>
+
+  {% block navbarend %}
+    <div class="navbar-end">
+      <div class="field has-addons">
+        <div class="control">
+          <input class="input is-info" id="searchFeatures" type="text" placeholder={{searchvalue | default("Features")}} value="{{searchstring}}">
+        </div>
+        <div class="control">
+          <a class="button is-info" id="searchOnClick">
+            <i class="fas fa-search"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+  {% endblock %}
+
+  </nav>
+
+  {% block content %}
+  {% endblock %}
+
+  <div class="overlay"></div>
+
+  <script>
+    var species = "{{ species | safe }}";
+
+    // Add remove loading class on body element based on Ajax request status
+    $(document).on({
+        ajaxStart: function(){
+            $("body").addClass("loading"); 
+        },
+        ajaxStop: function(){ 
+            $("body").removeClass("loading"); 
+        }    
+    });
+  </script>
+
+
+  </body>
+</html>
