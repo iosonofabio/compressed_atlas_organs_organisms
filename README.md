@@ -1,4 +1,6 @@
-# Compressed atlas across organs and organisms
+![Logo](logo.png)
+
+# Compressed cell atlas across organs and organisms
 This web application demonstrates the idea of a "compressed cell atlas", i.e. a nonredundant distillation of one or more single cell omics data sets, across organs and organisms.
 
 ## Testing
@@ -19,23 +21,28 @@ To test locally inside a docker container (simulating lightsail virtualization):
 
 ## Functionality
 Things you can do are shown on the home page once you launch the app, but as a quick (nonexhaustive) summary:
+- Natural language processing: write your request and the app will answer
 - Show gene expression and chromatin accessibility by cell type
 - Show gene expression and chromatin accessibility for a single gene/region across ages in all cell types
 - Show gene expression and chromatin accessibility for multiple genes/regions across ages in one cell type
-- Look at a disease condition (e.g. lack of exercise)
-- Show marker genes/regions for the cell types
-- Differential expression/accessibility (WIP)
+- Show marker genes/chromatin regions for cell types
+- Differential expression/accessibility across cell types, time points, organisms, and organs (WIP)
+- Show relative cell type abundance
+- Pathway analysis (Gene Ontology and KEGG)
+- Look up gene information (GeneCards, JAX)
+- Look up UCSC genome browser for gene/chromatin region coordinates
+- Look up GO categories for each gene 
+- Find genes/regions with similar expression/accessibility
+- Find genes/regions that are closeby on the same chromosome/scaffold
+- Suggest similar genes/chromatin peaks
+- Download plots in PNG and SVG format, and plot data as CSV
+- RESTful API access to the compressed data (documentation WIP)
 
-Unusual features of note:
-- The app also tries to give you suggestions for what steps to do next each time you use it.
-- Plots can be downloaded in PNG and SVG formats and the data therein as a CSV.
-- The compressed atlas itself can be accessed programmatically via the RESTful API, including a full copy of the compressed atlas (WIP)
-
-**NOTE:** raw (uncompressed) data cannot be accessed directly. Ask Emily for access.
+**NOTE:** raw (uncompressed) data cannot be accessed directly.
 
 ## Architecture
 The architecture of the compressed atlas is the following:
-- A RESTful APIs to request the compressed data (e.g. `/data/gene_names=Col1a1`).
+- A RESTful APIs to request the compressed data (e.g. `/data/gene_names=Col1a1`). Documentation for this API is WIP.
 - A set of interative plots (mostly heatmaps or variations on the theme, e.g. dot plots) to visuaise the compressed data.
 - A text control system enabling a natural language UX.
 
