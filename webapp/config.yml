@@ -3,7 +3,7 @@ feature_types: ['gene_expression']
 
 paths:
   compressed_atlas:
-    "mouse": "./static/atlas_data/tabula_muris.h5"
+    "mouse": "./static/atlas_data/tabula_muris_senis.h5"
     "human": "./static/atlas_data/tabula_sapiens.h5"
     "lemur": "./static/atlas_data/tabula_microcebus.h5"
 

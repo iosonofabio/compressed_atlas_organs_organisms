@@ -14,7 +14,6 @@ This comes from two sources:
 import os
 import sys
 import pathlib
-import yaml
 import h5py
 import numpy as np
 import pandas as pd
@@ -24,354 +23,220 @@ import anndata
 import scanpy as sc
 
 
-tms_source_url = 'https://figshare.com/articles/dataset/Processed_files_to_use_with_scanpy_/8273102'
-emilys_data_folder = pathlib.Path(__file__).parent.parent.parent / 'data' / 'Emilyslab'
-tms_data_folder = pathlib.Path(__file__).parent.parent.parent / 'data' / 'tabula_muris_senis'
-webapp_fdn = pathlib.Path('../../webapp')
-output_fdn = webapp_fdn / 'static' / 'scData'
-fn_out = output_fdn / 'mouse_compressed_heart_atlas.h5'
+root_repo_folder = pathlib.Path(__file__).parent.parent.parent  
+tms_data_folder = root_repo_folder / 'data' / 'full_atlases' / 'tabula_muris_senis'
+webapp_fdn = root_repo_folder / 'webapp'
+output_fdn = webapp_fdn / 'static' / 'atlas_data'
+fn_out = output_fdn / 'tabula_muris_senis.h5'
 
 
-conversion_dict = {
-    'TMS': {
-        'endothelial cell of coronary artery': 'Coronary_EC',
-        'fibroblast of cardiac tissue': 'Fibroblast',
-        'endocardial cell': 'Endocardial',
-        'smooth muscle cell': 'Smooth_muscle',
-        'cardiac neuron': 'Neuronal',
-        'mast cell': 'Myeloid',
-        # See separate chat about vent VS atrial cardiomyocytes in TMS/Emily's
-        'cardiomyocyte': 'Vent',
-        'leukocyte': 'Leukocyte',
-        'erythrocyte': 'Erythrocyte',
+rename_dict = {
+    'tissues': {
+        'Large_Intestine': 'Colon',
+        'Heart_and_Aorta': 'Heart',
+        'Marrow': 'Bone Marrow',
     },
-    'Emily': {
-        'Neuronal': 'Neuron',
-        'Coronary_EC': 'Coronary',
-        'Lymphatic_EC': 'Lymphatic',
-        'Myeloid': 'Macrophage',
-        'Bcell': 'B cell',
-        'Tcell': 'T cell',
-        'Smooth_muscle': 'Smooth muscle',
+    'cell_types': {
+        'endothelial cell of coronary artery': 'coronary cap',
+        'fibroblast of cardiac tissue': 'fibroblast',
+        'endocardial cell': 'endocardial',
+        'smooth muscle cell': 'smooth muscle',
+        'cardiac neuron': 'neuron',
+        'mast cell': 'myeloid',
+        # See separate chat about vent VS atrial cardiomyocytes in TMS/Emily's
+        'cardiomyocyte': 'ventricular',
+        'naive B cell': 'B cell',
+        'naive T cell': 'T cell',
+        'enterocyte of epithelium of large intestine': 'enterocyte',
+        'intestinal crypt stem cell': 'crypt',
+        'epithelial cell of large intestine': 'epithelial',
+        'large intestine goblet cell': 'goblet',
+        'hematopoietic precursor cell': 'hematopoietic',
+        'granulocytopoietic cell': 'granulocytopoietic',
+        'megakaryocyte-erythroid progenitor cell': 'megakaryocyte-erythroid',
+        'erythroid progenitor': 'erythroid',
+        'kidney proximal convoluted tubule epithelial cell': 'proximal tubule epi',
+        'epithelial cell of proximal tubule': 'proximal tubule epi',
+        'kidney proximal straight tubule epithelial cell': 'proximal tubule epi',
+        'kidney loop of Henle thick ascending limb epithelial cell': 'Henle limb epi',
+        'kidney loop of Henle ascending limb epithelial cell': 'Henle limb epi',
+        'kidney collecting duct principal cell': 'collecting duct epi',
+        'kidney collecting duct epithelial cell': 'collecting duct epi',
+        'kidney distal convoluted tubule epithelial cell': 'distal tubule epi',
+        'brush cell': 'brush',
+        'kidney cortex artery cell': 'arterial',
+        'kidney mesangial cell': 'mesangial',
+        'kidney capillary endothelial cell': 'capillary',
+        'kidney cell': 'unknown',
     }
 }
 
+# We store an organism-wide complete ordering of cell types, and each tissue
+# will cherry pick the necessary
+celltype_order = [
+    ('immune', [
+        'hematopoietic',
+        'basophil',
+        'granulocytopoietic',
+        'granulocyte',
+        'promonocyte',
+        'myeloid',
+        'monocyte',
+        'macrophage',
+        'megakaryocyte-erythroid',
+        'erythroid',
+        'proerythroblast',
+        'erythroblast',
+        'precursor B cell',
+        'late pro-B cell',
+        'immature B cell',
+        'B cell',
+        'plasma cell',
+        'T cell',
+        'NK cell',
+        'lymphocyte',  # TODO WTF kidney
+        'leukocyte',  # TODO WTF kidney
+        ]),
+    ('epithelial', [
+        'epithelial',
+        'goblet',
+        'brush',
+        'crypt',
+        'enterocyte',
+        'proximal tubule epi',
+        'distal tubule epi',
+        'podocyte',
+        'Henle limb epi',
+        'collecting duct epi',
+    ]),
+    ('endothelial', [
+        'arterial',
+        'coronary cap',
+        'fenestrated cap',
+        'capillary',
+    ]),
+    ('mesenchymal', [
+        'fibroblast',
+        'endocardial',
+        'ventricular',
+        'smooth muscle',
+        'mesangial',
+    ]),
+    ('other', [
+        'neuron',
+    ]),
+    ('unknown', [
+        'unknown',
+    ]),
+]
 
-def correct_celltypes(celltypes_raw, dataset):
+
+def get_tissue_data_dict(atlas_folder):
+    '''Get a dictionary with tissue order and files'''
+    result = []
+
+    fns = os.listdir(atlas_folder)
+    fns = [x for x in fns if '.h5ad' in x]
+
+    for fn in fns:
+        tissue = fn.split('-')[-1].split('.')[0]
+        tissue = rename_dict['tissues'].get(tissue, tissue)
+        result.append({
+            'tissue': tissue,
+            'filename': atlas_folder / fn,
+        })
+
+    result = pd.DataFrame(result).set_index('tissue')['filename']
+
+    # Order tissues alphabetically
+    result = result.sort_index()
+
+    return result
+
+
+def correct_celltypes(celltypes_raw):
+    '''Correct cell types in each tissue according to known dict'''
     celltypes_new = celltypes_raw.copy()
-    for ctraw, ct in conversion_dict[dataset].items():
-        celltypes_new[celltypes_new == ctraw] = ct
+    for ctraw, celltype in rename_dict['cell_types'].items():
+        celltypes_new[celltypes_new == ctraw] = celltype
     return celltypes_new
 
+
+def get_celltype_order(celltypes_unordered):
+    '''Use global order to reorder cell types for this tissue'''
+    celltypes_ordered = []
+    for broad_type, celltypes_broad_type in celltype_order:
+        for celltype in celltypes_broad_type:
+            if celltype in celltypes_unordered:
+                celltypes_ordered.append(celltype)
+
+    missing_celltypes = False
+    for celltype in celltypes_unordered:
+        if celltype not in celltypes_ordered:
+            print('Missing celltype:', celltype)
+            missing_celltypes = True
+
+    if missing_celltypes:
+        raise IndexError("Missing cell types!")
+
+    return celltypes_ordered
 
 
 if __name__ == '__main__':
 
-    print('Read celltype order from config file')
-    with open(webapp_fdn / 'config.yml') as f:
-        config = yaml.safe_load(f)
-    celltypes = config['order']['celltypes']
-
-    # Remove existing file if present
+    # Remove existing compressed atlas file if present
     if os.path.isfile(fn_out):
         os.remove(fn_out)
 
-    switches = {
-        'ATAC': True,
-        'RNA': True,
-        'RNA-TMS': True,
-        'RNA-combine': True,
-        'RNA-addfeatures': True,
-        'RNA-store': True,
-    }
+    tissue_sources = get_tissue_data_dict(tms_data_folder)
+    for it, (tissue, full_atlas_fn) in enumerate(tissue_sources.items()):
+        if it < 4:
+            continue
+        print(tissue)
 
-    if switches['ATAC']:
-        print('Emily\'s data (ATAC)')
-        fn_atac = emilys_data_folder / 'Mouse_Heart_ATAC_peaks.h5ad'
-
-        # raw access for speed/memory reasons
-        with h5py.File(fn_atac) as fa:
-
-            print('Read and check metadata')
-            regions = fa['var']['_index'].asstr()[:]
-
-            annos_a = fa['obs']['cellType'].asstr()[:]
-            # FIX: ATAC-Seq and RNA-Seq both have a typo in lymphatics
-            annos_a[annos_a == 'Lympathic_EC'] = "Lymphatic_EC"
-
-            annos_a = correct_celltypes(annos_a, 'Emily')
-
-            annos_a_count = pd.Series(annos_a).value_counts()
-
-            celltypes_a = annos_a_count[~annos_a_count.index.str.startswith('unknown')].index
-
-            assert set(celltypes) == set(celltypes_a)
-
-            ages_a = fa['obs']['age'].asstr()[:]
-            # Convert Y -> 10m, MA -> 19m
-            ages_a[ages_a == 'Y'] = '10m'
-            ages_a[ages_a == 'MA'] = '~19m'
-            ages = ['10m', '~19m']
-
-            assert(set(ages_a) == set(ages))
-
-            # NOTE: "condition" is broken, reconstruct it from "group"
-            condition = fa['obs']['group'].asstr()[:]
-            condition[condition == 'MAE'] = 'E'
-            condition[condition == 'YE'] = 'E'
-            condition[condition == 'MAS'] = 'S'
-            condition[condition == 'YS'] = 'S'
-
-            columns_age = []
-            for ct in celltypes:
-                for age in ages:
-                    columns_age.append('_'.join([ct, 'Emily', age]))
-
-            print('Read ATAC matrix')
-            Xh5 = fa['raw']['X']
-            X = csr_matrix(
-                (np.asarray(Xh5['data']), np.asarray(Xh5['indices']), np.asarray(Xh5['indptr'])),
-                )
-
-            print('Compress ATAC data for healthy cell types, time, and disease+time')
-            avg_acc = pd.DataFrame(
-                    np.zeros((len(regions), len(celltypes)), np.float32),
-                    index=regions,
-                    columns=celltypes)
-            ncells_acc = pd.Series(np.zeros(len(celltypes), np.int64), index=celltypes)
-            avg_acc_tp = pd.DataFrame(
-                    np.zeros((len(regions), len(celltypes) * len(ages)), np.float32),
-                    index=regions,
-                    columns=columns_age,
-                    )
-            ncells_acc_tp = pd.Series(
-                    np.zeros(len(columns_age), np.int64), index=columns_age,
-                    )
-            avg_acc_di = pd.DataFrame(
-                    np.zeros((len(regions), len(celltypes) * len(ages)), np.float32),
-                    index=regions,
-                    columns=columns_age,
-                    )
-            ncells_acc_di = pd.Series(
-                    np.zeros(len(columns_age), np.int64), index=columns_age,
-                    )
-            for ct in celltypes:
-                print(ct)
-                # Focus on baseline (sedentary) for now
-                idx = ((annos_a == ct) & (condition == "S")).nonzero()[0]
-                Xct = X[idx].astype(np.float32)
-
-                # Binarize
-                Xct.data[:] = 1
-
-                # TODO: normalize
-                adata_tmp = anndata.AnnData(X=Xct)
-                sc.pp.normalize_total(
-                    adata_tmp,
-                    target_sum=None, # ?? Normalizing to the median cell coverage, does not make a lot of sense but also no harm
-                    key_added='coverage',
-                )
-                Xct = adata_tmp.X
-
-                # Avg accessibility == fraction accessible
-                avg_acc[ct] = np.asarray(Xct.mean(axis=0))[0]
-
-                # Number of cells
-                ncells_acc[ct] = len(idx)
-
-                # Split by time
-                for age in ages:
-                    idx_age = (ages_a[idx] == age).nonzero()[0]
-                    Xct_age = Xct[idx_age]
-                    label = '_'.join([ct, 'Emily', age])
-                    avg_acc_tp[label] = np.asarray(Xct_age.mean(axis=0))[0]
-                    ncells_acc_tp[label] = len(idx_age)
-
-                # Disease/non-baseline (exercise)
-                idx = ((annos_a == ct) & (condition == "E")).nonzero()[0]
-                Xct = X[idx].astype(np.float32)
-                for age in ages:
-                    idx_age = (ages_a[idx] == age).nonzero()[0]
-                    Xct_age = Xct[idx_age]
-                    label = '_'.join([ct, 'Emily', age])
-                    avg_acc_di[label] = np.asarray(Xct_age.mean(axis=0))[0]
-                    ncells_acc_di[label] = len(idx_age)
-
-        del X
-
-        print('Store compressed atlas (ATAC)')
-        with h5py.File(fn_out, 'a') as h5_data:
-            ca = h5_data.create_group('chromatin_accessibility')
-            ca.create_dataset('features', data=avg_acc.index.values.astype('S'))
-            group = ca.create_group('celltype')
-            group.create_dataset('index', data=avg_acc.columns.values.astype('S'))
-            group.create_dataset('average', data=avg_acc.T.values, dtype='f4')
-            group.create_dataset('cell_count', data=ncells_acc.values, dtype='i8')
-
-            group = ca.create_group('celltype_dataset_timepoint')
-            group.create_dataset('index', data=avg_acc_tp.columns.values.astype('S'))
-            group.create_dataset('average', data=avg_acc_tp.T.values, dtype='f4')
-            group.create_dataset('cell_count', data=ncells_acc_tp.values, dtype='i8')
-
-            group = ca.create_group('celltype_dataset_timepoint_disease')
-            group.create_dataset('index', data=avg_acc_di.columns.values.astype('S'))
-            group.create_dataset('average', data=avg_acc_di.T.values, dtype='f4')
-            group.create_dataset('cell_count', data=ncells_acc_di.values, dtype='i8')
-
-    if switches['RNA']:
-        print('Emily\'s data (RNA)')
-        fn_rna = emilys_data_folder / 'Mouse_Heart_RNA.h5ad'
-
-        # raw access for speed/memory reasons
-        with h5py.File(fn_rna) as fr:
-
-            print('Read and check metadata')
-            genes = fr['var']['_index'].asstr()[:]
-
-            annos_r = fr['obs']['cellType'].asstr()[:]
-            # FIX: RNA-Seq uses "Pericytes" instead of "Pericyte"
-            annos_r[annos_r == 'Pericytes'] = "Pericyte"
-            # FIX: RNA-Seq has a typo in lymphatics
-            annos_r[annos_r == 'Lympathic_EC'] = "Lymphatic_EC"
-
-            annos_r = correct_celltypes(annos_r, 'Emily')
-
-            annos_r_count = pd.Series(annos_r).value_counts()
-
-            celltypes_r = annos_r_count[~annos_r_count.index.str.startswith('unknown')].index
-
-            assert set(celltypes) == set(celltypes_r)
-
-            ages_r = fr['obs']['age'].asstr()[:]
-            # Convert Y -> 10m, MA -> 19m
-            ages_r[ages_r == 'Y'] = '10m'
-            ages_r[ages_r == 'MA'] = '~19m'
-            ages = ['10m', '~19m']
-
-            assert(set(ages_r) == set(ages))
-
-            # NOTE: "condition" seems to be correct in the RNA data
-            condition = fr['obs']['condition'].asstr()[:]
-
-            columns_age = []
-            for ct in celltypes:
-                for age in ages:
-                    columns_age.append('_'.join([ct, 'Emily', age]))
-
-            print('Read RNA matrix')
-            Xh5 = fr['raw']['X']
-            X = csr_matrix(
-                (np.asarray(Xh5['data']), np.asarray(Xh5['indices']), np.asarray(Xh5['indptr'])),
-                )
-            # FIXME: even though it says "raw", it's cptt -> natural logpp.
-            # So we just undo the log and average (arithmetic after normalisation)
-            X.data = np.exp(X.data) - 1
-
-            print('Compress RNA data for healthy cell types, time, and disease+time')
-            print('Do not store to file yet, we need to interleave it with TMS')
-            avg_exp = pd.DataFrame(
-                    np.zeros((len(genes), len(celltypes)), np.float32),
-                    index=genes,
-                    columns=celltypes)
-            frac_exp = pd.DataFrame(
-                    np.zeros((len(genes), len(celltypes)), np.float32),
-                    index=genes,
-                    columns=celltypes)
-            ncells_exp = pd.Series(np.zeros(len(celltypes), np.int64), index=celltypes)
-            avg_exp_tp = pd.DataFrame(
-                    np.zeros((len(genes), len(celltypes) * len(ages)), np.float32),
-                    index=genes,
-                    columns=columns_age,
-                    )
-            frac_exp_tp = pd.DataFrame(
-                    np.zeros((len(genes), len(celltypes) * len(ages)), np.float32),
-                    index=genes,
-                    columns=columns_age,
-                    )
-            ncells_exp_tp = pd.Series(
-                    np.zeros(len(columns_age), np.int64), index=columns_age,
-                    )
-            avg_exp_di = pd.DataFrame(
-                    np.zeros((len(genes), len(celltypes) * len(ages)), np.float32),
-                    index=genes,
-                    columns=columns_age,
-                    )
-            frac_exp_di = pd.DataFrame(
-                    np.zeros((len(genes), len(celltypes) * len(ages)), np.float32),
-                    index=genes,
-                    columns=columns_age,
-                    )
-            ncells_exp_di = pd.Series(
-                    np.zeros(len(columns_age), np.int64), index=columns_age,
-                    )
-            for ct in celltypes:
-                print(ct)
-                # Focus on baseline (sedentary) for now
-                idx = ((annos_r == ct) & (condition == "S")).nonzero()[0]
-                Xct = X[idx].astype(np.float32)
-
-                # Avg expression
-                avg_exp[ct].iloc[:Xct.shape[1]] = np.asarray(Xct.mean(axis=0))[0]
-
-                # Fraction accessible
-                frac_exp[ct].iloc[:Xct.shape[1]] = np.asarray((Xct > 0).mean(axis=0))[0]
-
-                # Number of cells
-                ncells_exp[ct] = len(idx)
-
-                # Split by time
-                for age in ages:
-                    idx_age = (ages_r[idx] == age).nonzero()[0]
-                    Xct_age = Xct[idx_age]
-                    label = '_'.join([ct, 'Emily', age])
-                    avg_exp_tp[label].iloc[:Xct_age.shape[1]] = np.asarray(Xct_age.mean(axis=0))[0]
-                    frac_exp_tp[label].iloc[:Xct_age.shape[1]] = np.asarray((Xct_age > 0).mean(axis=0))[0]
-                    ncells_exp_tp[label] = len(idx_age)
-
-                # Disease/non-baseline (exercise)
-                idx = ((annos_r == ct) & (condition == "E")).nonzero()[0]
-                Xct = X[idx].astype(np.float32)
-                for age in ages:
-                    idx_age = (ages_r[idx] == age).nonzero()[0]
-                    Xct_age = Xct[idx_age]
-                    label = '_'.join([ct, 'Emily', age])
-                    avg_exp_di[label].iloc[:Xct_age.shape[1]] = np.asarray(Xct_age.mean(axis=0))[0]
-                    frac_exp_di[label].iloc[:Xct_age.shape[1]] = np.asarray((Xct_age > 0).mean(axis=0))[0]
-                    ncells_exp_di[label] = len(idx_age)
-            del X
-
-    if switches['RNA-TMS']:
-        print('Tabula Muris Senis')
-        # Locate h5ad files for TMS
-        drop_source = tms_data_folder / 'tabula-muris-senis-droplet-processed-official-annotations-Heart_and_Aorta.h5ad'
-
-        # Ignore the FACS data for this repo: Emily used droplets anyway
-        data_type = 'drop'
-        data_filename = drop_source
-
-        # Read the data
-        adata_tissue = anndata.read(data_filename)
+        adata_tissue = anndata.read(full_atlas_fn)
 
         # Restart from raw data and renormalize
         adata_tissue = adata_tissue.raw.to_adata()
 
-        # cptt, like Emily's RNA data
+        # cptt throughout, like Emily's RNA data
         sc.pp.normalize_total(
             adata_tissue,
             target_sum=1e4,
             key_added='coverage',
         )
 
-        #standardizing obs categories, cleaning up so that categories are just raw annotations
         adata_tissue.obs['cellType'] = correct_celltypes(
-                np.asarray(adata_tissue.obs['cell_ontology_class']), 'TMS')
-        celltypes_tms = adata_tissue.obs['cellType'].value_counts().index
-        adata_tissue.obs['condition'] = 'S'
+            np.asarray(adata_tissue.obs['cell_ontology_class'])
+        )
+        celltypes = get_celltype_order(
+            adata_tissue.obs['cellType'].value_counts().index,
+        )
 
-        # TODO: call northstar or treasuremap or both: for now, just take at face
-        # value and rename some cell types to be somewhat consistent
+        continue
 
-        print('Add TMS data in celltype-timepoint group only')
+    sys.exit()
+
+    if False:
+        print('Add data to celltype group')
+        genes = adata_tissue.var_names
+        avg_exp = pd.DataFrame(
+                np.zeros((len(genes), len(celltypes)), np.float32),
+                index=genes,
+                columns=celltypes,
+                )
+        frac_exp = pd.DataFrame(
+                np.zeros((len(genes), len(celltypes)), np.float32),
+                index=genes,
+                columns=celltypes,
+                )
+        ncells_exp = pd.Series(
+                np.zeros(len(celltypes), np.int64), index=celltypes,
+                )
+
+        #  TODO
+
+        print('Add data to celltype-timepoint group')
         ages_tms = adata_tissue.obs['age'].value_counts().index.tolist()
         ages_tms.sort(key=lambda x: int(x[:-1]))
         columns_age = []
