@@ -1,10 +1,7 @@
-from xml.dom import NotFoundErr
+import pickle
 import h5py
 import numpy as np
 import pandas as pd
-import json
-import pickle
-import re
 from scipy.cluster.hierarchy import linkage, leaves_list
 from scipy.spatial.distance import pdist
 
