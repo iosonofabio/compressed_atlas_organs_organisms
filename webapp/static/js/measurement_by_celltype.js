@@ -1,83 +1,122 @@
+import { dotPlotSizeToFrac, dotPlotFracToSize, getDomains, getPseudocount, getTickTexts } from './plotUtils.js';
+
+
 // Plot heatmap by celltype as a callback for the AJAX request
 // Use global variables to store persistent data
-var heatmapData = {};
+var plotData = {};
 
-function HeatmapByCelltype(
-    result_input,
-    htmlElementId,
-    dataIndex,
+function plotMeasurementByCelltype(
+    result,
     dataScale,
-    celltypeOrder,
-    heatDot) {
+    tableOrder,
+    heatDot,
+    refresh=false) {
 
-    // Only the bottom plot requires xtick labels
-    let isBottomPlot = (dataIndex + 1) == result_input['data'].length;
+    let htmlElementId = 'plotDiv';
+    let htmlElement = document.getElementById(htmlElementId);
 
-    let result = {
-        'data': result_input['data'][dataIndex],
-        'features': result_input['features'][dataIndex],
-        'feature_type': result_input['feature_type'][dataIndex],
-        'features_hierarchical': result_input['features_hierarchical'][dataIndex],
-        'celltypes': result_input['celltypes'],
-        'celltypes_hierarchical': result_input['celltypes_hierarchical'],
-        'species': result_input['species'],
-    }
-    if (result['feature_type'] == 'gene_expression') {
-        result['data_fractions'] = result_input['data_fractions'][dataIndex]
-        result['gene_ids'] = result_input['gene_ids'][dataIndex]
-        result['GO_terms'] = result_input['GO_terms'][dataIndex]
-    }
+    // Make new plot if none is present
+    if (($('#'+htmlElementId).html() === ""))
+        refresh = true;
 
-    let x_axis, y_axis;
-    let longestXlabel = 0, longestYlabel = 0;
-    if (celltypeOrder == "original") {
+    let nPlots = result['data'].length;
+    let x_axis, y_axiss;
+    if (tableOrder == "original") {
         x_axis = result['celltypes'];
-        y_axis = result['features'];
+        y_axiss = result['features'];
     } else {
         x_axis = [];
         for (let i = 0; i < result['celltypes_hierarchical'].length; i++) {
             const ct = result['celltypes'][result['celltypes_hierarchical'][i]];
-            longestXlabel = Math.max(longestXlabel, ct.length);
             x_axis.push(ct);
         }
-        y_axis = [];
-        for (let i = 0; i < result['features_hierarchical'].length; i++) {
-            const feature = result['features'][result['features_hierarchical'][i]];
-            y_axis.push(feature);
-            longestYlabel = Math.max(longestYlabel, feature.length);
+        y_axiss = [];
+        for (let k=0; k < nPlots; k++) {
+            y_axiss.push([]);
+            for (let i = 0; i < result['features_hierarchical'][k].length; i++) {
+                const feature = result['features'][k][result['features_hierarchical'][k][i]];
+                y_axiss[k].push(feature);
+            }
         }
     }
-    let ytickMargin = 200;
 
-    let nfeatures =  y_axis.length;
+    let longestXlabel = 0, longestYlabel = 0;
+    for (let i=0; i < x_axis.length; i++) {
+        longestXlabel = Math.max(longestXlabel, result['celltypes'][i].length);
+    }
+    for (let k=0; k < nPlots; k++) {
+        for (let i=0; i < y_axiss[k].length; i++) {
+            longestYlabel = Math.max(longestYlabel, result['features'][k][i].length);
+        }
+    }
+
+    let nfeatures = y_axiss.reduce((acc, a) => acc + a.length, 0);
     let ncelltypes = x_axis.length;
-    let pxCell = 40, pxChar = 15;
-    let graph_width = pxChar * (5 + longestYlabel) + pxCell * ncelltypes + 120;
-    let graph_height = pxCell * nfeatures + pxChar * longestXlabel + 20;
+    let pxCell = 40, pxChar = 4.4, plotGap = 10;
+    let ytickMargin = 85 + pxChar * longestYlabel;
+    let xtickMargin = 15 + pxChar * longestXlabel;
+    let graphWidth = ytickMargin + pxCell * ncelltypes + 60;
+    let graphHeight = pxCell * nfeatures + plotGap * (nPlots - 1) + xtickMargin;
+
+    // Height ratios for the plots
+    let yAxisDomains = getDomains(y_axiss, true);
 
     // Add hyperlinks to feature names if they are genes
-    let yticktext = [];
-    for (let i = 0; i < y_axis.length; i++) {
-        const feature = y_axis[i];
-        let tickText;
-        if (result['feature_type'] == 'gene_expression') {
-            const geneId = result['gene_ids'][feature];
-            if (geneId !== "") {
-                let geneUrl = feature;
-                if (geneId.startsWith('MGI')) {
-                    geneUrl = 'http://www.informatics.jax.org/marker/'+geneId;
-                } else {
-                    geneUrl = 'https://www.genecards.org/cgi-bin/carddisp.pl?gene='+geneId;
-                }
-                tickText = '<a href="'+geneUrl+'">'+feature+'</a> - <span><b>GO</b></span>';
-            }
-        } else {
-            tickText = feature.split('-');
-        }
-        yticktext.push(tickText);
+    let yticktexts = [];
+    for (let k=0; k < nPlots; k++) {
+        let yticktexts_k = getTickTexts(
+            y_axiss[k],
+            result['feature_type'][k],
+            result['gene_ids'][k],
+        );
+        yticktexts.push(yticktexts_k);
     }
 
-    // Add SVG download button
+    // Layout for plotly
+    let traces = [];
+    let layout = {
+        grid: {
+            rows: nPlots, columns: 1,
+            roworder: "top to bottom",
+        },
+        autosize: true,
+        width: graphWidth,
+        height: graphHeight,
+        margin: {
+            l: ytickMargin,
+            r: 0,
+            b: 0,
+            t: 0,
+            pad: 4,
+        },
+        xaxis: {
+            autorange: true,
+            automargin: true,
+            tickangle: 270,
+            type: 'category',
+        },
+    };
+    for (let k=0; k < nPlots; k++) {
+        traces.push({});
+        let yaxisName = 'yaxis', yaxisShort = 'y';
+        if (k != 0) {
+            yaxisName += (k+1);
+            yaxisShort += (k+1);
+        }
+        traces[k]['yaxis'] = yaxisShort;
+        layout[yaxisName] = {
+            autorange: "reversed",
+            type: 'category',
+            automargin: false,
+            scaleanchor: 'x',
+            scaleratio: 1,
+            tickvals: y_axiss[k],
+            ticktext: yticktexts[k],
+            domain: yAxisDomains[k],
+        };
+    }
+
+    // Config for plotly
     let config = {
       scrollZoom: false,
       editable: false,
@@ -104,373 +143,227 @@ function HeatmapByCelltype(
 
     // Heatmap
     if (heatDot == "heat") {
-        // Fill data
-        let data_content = [];
-        if (celltypeOrder == "original") {
-            for (let i = 0; i < y_axis.length; i++) {
-                data_content.push([]);
-                for (let j = 0; j < x_axis.length; j++) {
-                    let measurement = result['data'][i][j];
-                    if (dataScale == "log10") {
-                        let pseudocount = 0.5;
-                        if (result['feature_type'] != 'gene_expression') {
-                            pseudocount = 0.01;
-                        }
-                        measurement = Math.log10(measurement + pseudocount);
-                    }
-                    data_content[i].push(measurement);
-                }
-            }
-        } else {
-            for (let i = 0; i < y_axis.length; i++) {
-                const ii = result['features_hierarchical'][i];
-                data_content.push([]);
-                for (let j = 0; j < x_axis.length; j++) {
-                    const jj = result['celltypes_hierarchical'][j];
-                    let measurement = result['data'][ii][jj];
-                    if (dataScale == "log10") {
-                        let pseudocount = 0.5;
-                        if (result['feature_type'] != 'gene_expression') {
-                            pseudocount = 0.01;
-                        }
-                        measurement = Math.log10(measurement + pseudocount);
-                    }
-                    data_content[i].push(measurement);
-                }
-            }
+        // Layout options
+        for (let k=0; k < nPlots; k++) {
+            traces[k]['type'] = 'heatmap';
+            traces[k]['hoverongaps'] = false;
+            traces[k]['colorscale'] = 'Reds';
         }
-        var data = {
-            type: 'heatmap',
-            hoverongaps: false,
-            colorscale: 'Reds',
-        };
 
-        // Make new plot if none is present
-        if (($('#'+htmlElementId).html() === ""))
-            plotForceRefresh = true;
-        // If it's a new plot or a refresh was forced
-        if (plotForceRefresh == true) {
-            data['z'] = data_content;
-            data['x'] = x_axis;
-            data['y'] = y_axis;
+        // Config options: download as CSV
+        config["modeBarButtonsToAdd"].push({
+            name: 'Download expression as CSV',
+            icon: Plotly.Icons.disk,
+            click: function(gd) {
+                let text = 'Feature,' + gd['data'][0]['x'] + '\n';
+                for (let k=0; k < nPlots; k++) {
+                    let data = gd['data'][k]['z'];
+                    for(let i=0; i < zs[k].length; i++){
+                        text += gd['data'][0]['y'][i] + ',' + zs[k][i] + '\n';
+                    }
+                }
+                var blob = new Blob([text], {type: 'text/plain'});
+                var a = document.createElement('a');
+                const object_URL = URL.createObjectURL(blob);
+                a.href = object_URL;
+                a.download = result['feature_type'] + '.csv';
+                document.body.appendChild(a);
+                a.click();
+                URL.revokeObjectURL(object_URL);
+            },
+        });
 
-            var layout = {
-                autosize: true,
-                width: graph_width,
-                height: graph_height,
-                margin: {
-                    l: ytickMargin,
-                    r: 0,
-                    b: 0,
-                    t: 0,
-                    pad: 4,
-                },
-                xaxis: {
-                    automargin: true,
-                    tickangle: 270,
-                    type: 'category',
-                    constraintoward: 'left',
-                },
-                yaxis: {
-                    automargin: false,
-                    autorange: "reversed",
-                    type: 'category',
-                    scaleratio: 1,
-                    scaleanchor: 'x',
-                    tickvals: y_axis,
-                    ticktext: yticktext,
-                },
-            };
+        // Fill trace data
+        let zs = [];
+        for (let k=0; k < nPlots; k++) {
+            zs.push([]);
+            for (let i = 0; i < y_axiss[k].length; i++) {
+                zs[k].push([]);
+                for (let j = 0; j < x_axis.length; j++) {
+                    let ii = i, jj = j;
+                    if (tableOrder != "original") {
+                        ii = result['features_hierarchical'][k][i];
+                        jj = result['celltypes_hierarchical'][j];
+                    }
+                    let measurement = result['data'][k][ii][jj];
+                    if (dataScale == "log10") {
+                        let pseudoCount = getPseudocount(result['feature_type'][k]);
+                        measurement = Math.log10(measurement + pseudoCount);
+                    }
+                    zs[k][i].push(measurement);
+                }
+            }
+           traces[k]['z'] = zs[k];
+           traces[k]['x'] = x_axis;
+           traces[k]['y'] = y_axiss[k];
+        }
 
-            config["modeBarButtonsToAdd"].push({
-                name: 'Download expression as CSV',
-                icon: Plotly.Icons.disk,
-                click: function(gd) {
-                    var text = '';
-                    let data = gd['data'][0]['z'];
-                    text += 'Gene,' + gd['data'][0]['x'] + '\n';
-                    for(var i = 0; i < data.length; i++){
-                        text += gd['data'][0]['y'][i] + ',' + data[i] + '\n';
-                    };
-                    var blob = new Blob([text], {type: 'text/plain'});
-                    var a = document.createElement('a');
-                    const object_URL = URL.createObjectURL(blob);
-                    a.href = object_URL;
-                    a.download = result['feature_type'] + '.csv';
-                    document.body.appendChild(a);
-                    a.click();
-                    URL.revokeObjectURL(object_URL);
-                },
-            });
-
-            Plotly.newPlot(
-                document.getElementById(htmlElementId),
-                [data],
-                layout,
-                config,
-            );
-
-        // Update existing plot if present
+        if (refresh == true) {
+            Plotly.newPlot(htmlElement, traces, layout, config);
         } else {
-            data['z'] = [data_content];
-            data['x'] = [x_axis];
-            data['y'] = [y_axis];
-            Plotly.update(
-                document.getElementById(htmlElementId),
-                data,
-                {
-                    height: graph_height,
-                    yaxis: {
-                        autorange: "reversed",
-                        automargin: false,
-                        type: 'category',
-                        scaleratio: 1,
-                        scaleanchor: 'x',
-                        tickvals: y_axis,
-                        ticktext: yticktext,
-                    },
-                },
-                [0],
-            );
+            Plotly.react(htmlElement, traces, layout, config);
         }
 
     // Dot plot
     } else {
-
-        let x = [], y = [], tooltips = [], markersize = [], markercolor = [];
-        if (celltypeOrder == "original") {
-            for (let i = 0; i < y_axis.length; i++) {
-                for (let j = 0; j < x_axis.length; j++) {
-                    const feature = y_axis[i];
-                    const celltype = x_axis[j];
-                    let measurement = result['data'][i][j];
-                    if (dataScale == "log10") {
-                        let pseudocount = 0.5;
-                        if (result['feature_type'] != 'gene_expression') {
-                            pseudocount = 0.01;
-                        }
-                        measurement = Math.log10(measurement + pseudocount);
-                    }
-                    let frac;
-                    if (result['feature_type'] == 'gene_expression') {
-                        frac = result['data_fractions'][i][j];
-                    } else {
-                        frac = result['data'][i][j];
-                    }
-
-                    // ATAC-Seq has generally smaller fractions, so highlight more
-                    let ms;
-                    if (result['feature_type'] == 'gene_expression') {
-                        ms = 2 + 18 * Math.sqrt(frac);
-                    } else {
-                        ms = 2 + 60 * Math.sqrt(frac);
-                    }
-
-                    const tooltip = "Average: "+measurement+", Fraction of cells: "+parseInt(100 * frac)+"%";
-                    x.push(celltype);
-                    y.push(feature);
-                    markercolor.push(measurement);
-                    markersize.push(ms);
-                    tooltips.push(tooltip);
-                }
-            }
-        } else {
-            for (let i = 0; i < y_axis.length; i++) {
-                const ii = result['features_hierarchical'][i];
-                for (let j = 0; j < x_axis.length; j++) {
-                    const jj = result['celltypes_hierarchical'][j];
-                    const feature = y_axis[i];
-                    const celltype = x_axis[j];
-                    let measurement = result['data'][ii][jj];
-                    if (dataScale == "log10") {
-                        let pseudocount = 0.5;
-                        if (result['feature_type'] != 'gene_expression') {
-                            pseudocount = 0.01;
-                        }
-                        measurement = Math.log10(measurement + pseudocount);
-                    }
-                    let frac;
-                    if (result['feature_type'] == 'gene_expression') {
-                        frac = result['data_fractions'][ii][jj];
-                    } else {
-                        frac = result['data'][ii][jj];
-                    }
-                    let ms;
-                    if (result['feature_type'] == 'gene_expression') {
-                        ms = 2 + 18 * Math.sqrt(measurement);
-                    } else {
-                        ms = 2 + 60 * Math.sqrt(frac);
-                    }
-                    const tooltip = "Average: "+measurement+", Fraction of cells: "+parseInt(100 * frac)+"%";
-                    x.push(celltype);
-                    y.push(feature);
-                    markercolor.push(measurement);
-                    markersize.push(ms);
-                    tooltips.push(tooltip);
-                }
-            }
-        }
-        var data = {
-            mode: 'markers',
-            marker: {
-                symbol: 'circle',
-                colorscale: 'Reds',
-                colorbar: {},
-            },
-            'hoverinfo': 'text',
-        };
-
-        if (($('#'+htmlElementId).html() === "") || (plotForceRefresh == true)) {
-            data['x'] = x;
-            data['y'] = y;
-            data['text'] = tooltips;
-            data['marker']['color'] = markercolor;
-            data['marker']['size'] = markersize;
-
-            var layout = {
-                autosize: true,
-                width: graph_width,
-                height: graph_height,
-                margin: {
-                    l: ytickMargin,
-                    r: 0,
-                    b: 0,
-                    t: 0,
-                    pad: 4,
-                },
-                xaxis: {
-                    autorange: true,
-                    automargin: true,
-                    tickangle: 270,
-                    type: 'category',
-                },
-                yaxis: {
-                    autorange: "reversed",
-                    type: 'category',
-                    automargin: false,
-                    scaleanchor: 'x',
-                    scaleratio: 1,
-                    tickvals: y_axis,
-                    ticktext: yticktext,
-                },
-            };
-
-            config["modeBarButtonsToAdd"].push({
-                name: 'Download average as CSV',
-                icon: Plotly.Icons.disk,
-                click: function(gd) {
-                    var text = '';
-                    let measurements = gd['data'][0]['marker']['color'];
-                    const nct = x_axis.length;
-                    // Header with cell type names
-                    text += 'Feature';
-                    for(var i = 0; i < nct; i++){
-                        text += ',' + gd['data'][0]['x'][i];
-                    };
-                    // Gene expression
+        // Config: modebar buttons
+        config["modeBarButtonsToAdd"].push({
+            name: 'Download average as CSV',
+            icon: Plotly.Icons.disk,
+            click: function(gd) {
+                const nct = x_axis.length;
+                // Header with cell type names
+                let text = 'Feature';
+                for(var i = 0; i < nct; i++){
+                    text += ',' + gd['data'][0]['x'][i];
+                };
+                // Table data
+                for (let k=0; k < nPlots; k++) {
+                    let measurements = gd['data'][k]['marker']['color'];
                     for (var i = 0; i < measurements.length; i++) {
                         if (i % nct == 0) {
-                            text += '\n' + gd['data'][0]['y'][i];
+                            text += '\n' + gd['data'][k]['y'][i];
                         }
                         text += ',' + measurements[i];
                     }
-                    text += '\n';
+                }
+                text += '\n';
 
-                    var blob = new Blob([text], {type: 'text/plain'});
-                    var a = document.createElement('a');
-                    const object_URL = URL.createObjectURL(blob);
-                    a.href = object_URL;
-                    a.download = 'gene_expression.csv';
-                    document.body.appendChild(a);
-                    a.click();
-                    URL.revokeObjectURL(object_URL);
-                },
-            });
-            config["modeBarButtonsToAdd"].push({
-                name: 'Download fraction of cells as CSV',
-                icon: Plotly.Icons.disk,
-                click: function(gd) {
-                    var text = '';
-                    let markerSizes = gd['data'][0]['marker']['size'];
-                    const nct = x_axis.length;
-                    // Header with cell type names
-                    text += 'Feature';
-                    for(var i = 0; i < nct; i++){
-                        text += ',' + gd['data'][0]['x'][i];
-                    };
-                    // Gene expression
-                    for (var i = 0; i < markerSizes.length; i++) {
+                var blob = new Blob([text], {type: 'text/plain'});
+                var a = document.createElement('a');
+                const object_URL = URL.createObjectURL(blob);
+                a.href = object_URL;
+                a.download = 'gene_expression.csv';
+                document.body.appendChild(a);
+                a.click();
+                URL.revokeObjectURL(object_URL);
+            },
+        });
+        config["modeBarButtonsToAdd"].push({
+            name: 'Download fraction of cells as CSV',
+            icon: Plotly.Icons.disk,
+            click: function(gd) {
+                const nct = x_axis.length;
+                // Header with cell type names
+                let text = 'Feature';
+                for(let i=0; i < nct; i++){
+                    text += ',' + gd['data'][0]['x'][i];
+                };
+                // Table data
+                for (let k=0; k < nPlots; k++) {
+                    let markerSizes = gd['data'][k]['marker']['size'];
+                    for (let i=0; i < markerSizes.length; i++) {
                         if (i % nct == 0) {
-                            text += '\n' + gd['data'][0]['y'][i];
+                            text += '\n' + gd['data'][k]['y'][i];
                         }
-                        let frac = (markerSizes[i] - 2) / 18.0;
-                        // The marker radius is prop to the sqrt
-                        frac *= frac;
+                        let frac = dotPlotSizeToFrac(markerSizes[i], result['feature_types'][k]);
                         text += ',' + frac;
                     }
-                    text += '\n';
+                }
+                text += '\n';
 
-                    var blob = new Blob([text], {type: 'text/plain'});
-                    var a = document.createElement('a');
-                    const object_URL = URL.createObjectURL(blob);
-                    a.href = object_URL;
-                    a.download = 'fraction_of_cells.csv';
-                    document.body.appendChild(a);
-                    a.click();
-                    URL.revokeObjectURL(object_URL);
-                },
-            });
+                var blob = new Blob([text], {type: 'text/plain'});
+                var a = document.createElement('a');
+                const object_URL = URL.createObjectURL(blob);
+                a.href = object_URL;
+                a.download = 'fraction_of_cells.csv';
+                document.body.appendChild(a);
+                a.click();
+                URL.revokeObjectURL(object_URL);
+            },
+        });
 
-            Plotly.newPlot(
-                document.getElementById(htmlElementId),
-                [data],
-                layout,
-                config,
-            );
+        // Fill trace data: x, y, markercolor/size
+        for (let k=0; k < nPlots; k++) {
+            traces[k]['mode'] = 'markers';
+            traces[k]['x'] = [];
+            traces[k]['y'] = [];
+            traces[k]['text'] = [];
+            traces[k]['marker'] = {
+                symbol: 'circle',
+                colorscale: 'Reds',
+                colorbar: {},
+                color: [],
+                size: [],
+            }
+            traces[k]['hoverinfo'] = 'text';
 
-        // Update existing plot
+            for (let i = 0; i < y_axiss[k].length; i++) {
+                for (let j = 0; j < x_axis.length; j++) {
+                    let ii = i, jj = j;
+                    if (tableOrder != "original") {
+                        ii = result['features_hierarchical'][k][i];
+                        jj = result['celltypes_hierarchical'][j];
+                    }
+                    traces[k]['x'].push(x_axis[jj]);
+                    traces[k]['y'].push(y_axiss[k][ii]);
+
+                    let measurement = result['data'][k][ii][jj];
+                    if (dataScale == "log10") {
+                        let pseudocount = getPseudocount(result['feature_type'][k]);
+                        measurement = Math.log10(measurement + pseudocount);
+                    }
+                    traces[k]['marker']['color'].push(measurement);
+
+                    // ATAC-Seq has generally smaller fractions, so highlight more
+                    let frac, markersize;
+                    if (result['feature_type'][k] == 'gene_expression') {
+                        frac = result['data_fractions'][k][ii][jj];
+                        markersize = 2 + 18 * Math.sqrt(frac);
+                    } else {
+                        frac = result['data'][k][ii][jj];
+                        markersize = 2 + 60 * Math.sqrt(frac);
+                    }
+                    traces[k]['marker']['size'].push(markersize);
+
+                    const tooltip = "Average: "+measurement+", Fraction of cells: "+parseInt(100 * frac)+"%";
+                    traces[k]['text'].push(tooltip);
+                }
+            }
+        }
+
+        if (refresh) {
+            Plotly.newPlot(htmlElement, traces, layout, config);
         } else {
-            data['x'] = [x];
-            data['y'] = [y];
-            data['text'] = [tooltips];
-            data['marker']['color'] = markercolor;
-            data['marker']['size'] = markersize;
-            Plotly.update(
-                document.getElementById(htmlElementId),
-                data,
-                {
-                    height: graph_height,
-                    yaxis: {
-                        autorange: "reversed",
-                        type: 'category',
-                        automargin: false,
-                        scaleanchor: 'x',
-                        scaleratio: 1,
-                        tickvals: result['yticks'],
-                        ticktext: result['yticktext'],
-                    },
-                    xaxis: {
-                        autorange: true,
-                        automargin: true,
-                        type: 'category',
-                        tickangle: 270,
-                    },
-
-                },
-                [0],
-            );
+            Plotly.react(htmlElement, traces, layout, config);
         }
     }
 
+    connectTooltip(
+        result['feature_type'],
+        result['GO_terms'],
+        result['feature_coords']);
+
+}
+
+
+function connectTooltip(feature_types, goTerms, feature_coords) {
+    let iGeneExpression = -1;
+    for (let k=0; k < feature_types.length; k++) {
+        if (feature_types[k] == "gene_expression") {
+            iGeneExpression = k;
+        }
+    }
+    if (iGeneExpression == -1) {
+        return;
+    }
+
+    let ytickName;
+    if (iGeneExpression == 0) {
+        ytickName = 'ytick';
+    } else {
+        ytickName = 'y' + (iGeneExpression + 1) + 'tick';
+    }
+
     // Add tooltips to gene names
-    $(".ytick > text > tspan").click(function(evt) {
+    $("." + ytickName + " > text > tspan").click(function(evt) {
         // If already active, it's a second click
-        let wasActive = this.classList.contains("active");
+        let wasActive = this.classList.contains("is-active");
 
         // Deactivate all, and if this was not active activate it
         hideTooltip();
-        $(".ytick > text > tspan").map(function(elem) {
-            this.classList.remove("active");
+        $("." + ytickName + " > text > tspan").map(function(elem) {
+            this.classList.remove("is-active");
             let gene = this.parentElement.getElementsByTagName("a")[0].innerHTML;
         })
         if (wasActive) {
@@ -478,19 +371,26 @@ function HeatmapByCelltype(
         }
 
         // Activate and show pop-up window
-        this.classList.add("active");
+        this.classList.add("is-active");
         let gene = this.parentElement.getElementsByTagName("a")[0].innerHTML;
-        let goTerms = result['GO_terms'][gene];
-        if (goTerms === undefined) {
+        let goTermsGene = goTerms[iGeneExpression][gene];
+        if (goTermsGene === undefined) {
             return;
         }
-        let text = "<b>GO terms:</b></br>";
-        for (let i = 0; i < goTerms.length; i++) {
-            text += '<div><a class="goHyperlink">'+goTerms[i]+"</a></div>";
+        let text = "<b>Name:</b> " + gene + "</br>";
+        const geneCoordsParts = feature_coords[iGeneExpression][gene].split("-");
+        const chrom = geneCoordsParts[0];
+        const start = geneCoordsParts[1];
+        const end = geneCoordsParts[2];
+        const featureUrl = 'https://genome.ucsc.edu/cgi-bin/hgTracks?db=mm10&position=' + chrom + ':' + start + '-' + end;
+        text += '<b>Position:</b> <a href="' + featureUrl + '" target="_blank">' + geneCoordsParts.join("-") + "</a></br>";
+        text += '<b>Protein atlas:</b> <a href="https://www.proteinatlas.org/search/' + gene + '" target="_blank">' + gene + "</a></br>";
+        text += "<b>GO terms:</b></br>";
+        for (let i = 0; i < goTermsGene.length; i++) {
+            text += '<div><a class="goHyperlink">'+goTermsGene[i]+"</a></div>";
         }
         showTooltip(evt, text);
     });
-    //$(".ytick > text > tspan").mouseout(function(evt) { hideTooltip(); });
 }
 
 function showTooltip(evt, text) {
@@ -514,53 +414,61 @@ function hideTooltip() {
 
 
 // NOTE: this is why react was invented...
-function updatePlot() {
+function updatePlot(refresh=false) {
     let dataScale = "original";
     if (!$("#cpmTab").hasClass('is-active')) {
         dataScale = "log10";
     }
-    let celltypeOrder = "original";
+    let tableOrder = "original";
     if (!$("#originalOrderTab").hasClass('is-active')) {
-        celltypeOrder = "hierarchical";
+        tableOrder = "hierarchical";
     }
     let heatDot = "heat";
     if (!$("#heatTab").hasClass('is-active')) {
         heatDot = "dot";
     }
 
-    // NOTE: heatmapData is the global persistent object
-    if (!heatmapData['result']) {
+    // NOTE: plotData is the global persistent object
+    if (!plotData['result']) {
         alert("Error: no data to plot");
         return;
     }
 
-    // Empty divs that are not plotted anymore
-    const plotTypes = ['gene_expression', 'chromatin_accessibility'];
-    let plotActive = {}
-    for (let i=0; i < plotTypes.length; i++) {
-        plotActive[plotTypes[i]] = false;
+    // Plot inside plotDiv
+    plotMeasurementByCelltype(
+        plotData['result'],
+        dataScale,
+        tableOrder,
+        heatDot,
+        refresh,
+    );
+
+    if (refresh) {
+        updatePathwayAnalysis();
     }
-    for (let i=0; i < heatmapData['result']['n_feature_types']; i++) {
-        plotActive[heatmapData['result']['feature_type'][i]] = true;
-    }
-    for (let i=0; i < plotTypes.length; i++) {
-        if (!plotActive[plotTypes[i]]) {
-            $('#plot_'+plotTypes[i]).html("");
+}
+
+function updatePathwayAnalysis() {
+    // Update pathway analysis
+    let genes;
+    let nPlots = plotData['result']['feature_type'].length;
+    let found = false;
+    for (let k=0; k < nPlots; k++) {
+        if (plotData['result']['feature_type'][k] == 'gene_expression') {
+            genes = plotData['result']['features'][k].join(',');
+            $('#suggestGO > a').attr(
+                'href', '/barplot_gsea?species='+species+'&gene_set=GO&genes='+genes);
+            $('#suggestKEGG > a').attr(
+                'href', '/barplot_gsea?species='+species+'&gene_set=KEGG&genes='+genes);
+            found = true;
+            break;
         }
     }
-
-    // Fill divs that are plotted
-    for (let i=0; i < heatmapData['result']['n_feature_types']; i++) {
-        HeatmapByCelltype(
-            heatmapData['result'],
-            'plot_'+heatmapData['result']['feature_type'][i],
-            i,
-            dataScale,
-            celltypeOrder,
-            heatDot,
-        );
+    if (found) {
+        document.getElementById("pathwaySuggestions").style.display = "inline";
+    } else {
+        document.getElementById("pathwaySuggestions").style.display = "none";
     }
-
 }
 
 function AssembleAjaxRequest( featurestring = "" ) {
@@ -588,15 +496,17 @@ function AssembleAjaxRequest( featurestring = "" ) {
         data: $.param(requestData),
         success: function(result) {
             // Store global variable
-            heatmapData = {
+            plotData = {
                 'result': result,
             };
 
             // Update search box: corrected feature names, excluding missing features
             setSearchBox(result['features']);
 
-            // Create heatmap
-            updatePlot();
+            // Create plot. Always refresh when you are asking for new data, specifically
+            // to address a bug with plot domains (e.g. chromatin accessibility AND gene
+            // expression)
+            updatePlot(true);
         },
         error: function (e) {
             console.log(e);
@@ -620,7 +530,7 @@ function onClickSpeciesSuggestions() {
         data: $.param(requestData),
         success: function(result) {
             // Store global variable
-            heatmapData = {
+            plotData = {
                 'result': result,
             };
             $("#suggest"+newSpecies).text(species.slice(0, 1).toUpperCase()+species.slice(1)).prop('id', "suggest"+species);
@@ -630,7 +540,7 @@ function onClickSpeciesSuggestions() {
             setSearchBox(result['features']);
 
             // Create heatmap
-            updatePlot();
+            updatePlot(true);
         },
         error: function (e) {
           alert('Error: Could not find orthologs for '+featureNames+'.')
@@ -638,13 +548,13 @@ function onClickSpeciesSuggestions() {
     });
 }
 
-// SuggestGenes: create a div with a "suggest" button
-function onClickFeatureSuggestions(correlatesType) {
+function onClickFeatureSimilarSuggestions(targetType) {
     var featureNames = $('#searchFeatures').val();
     let requestData = {
         feature_names: featureNames,
         species: species,
-        correlates_type: correlatesType,
+        correlates_type: targetType,
+        n_correlates: 5,
     }
     $.ajax({
         type:'GET',
@@ -658,16 +568,35 @@ function onClickFeatureSuggestions(correlatesType) {
             AssembleAjaxRequest();
         },
         error: function (e) {
-          alert('Error: Could not find genes correlated with ' + featureNames + '.')
+          alert('Error: Could not find features correlated with ' + featureNames + '.')
         }
     });
 }
 
-function onClickGeneSuggestions() {
-    return onClickFeatureSuggestions(correlatesType="gene_expression");
-}
-function onClickRegionSuggestions() {
-    return onClickFeatureSuggestions(correlatesType="chromatin_accessibility");
+
+function onClickFeatureNearbySuggestions(targetType) {
+    var featureNames = $('#searchFeatures').val();
+    let requestData = {
+        feature_names: featureNames,
+        species: species,
+        target_type: targetType,
+        distance_max: 50000,
+    }
+    $.ajax({
+        type:'GET',
+        url:'/data/features_nearby',
+        data: $.param(requestData),
+        success: function(result) {
+            // Update search box: corrected feature names, excluding missing ones
+            setSearchBox(result);
+
+            // Request data
+            AssembleAjaxRequest();
+        },
+        error: function (e) {
+          alert('Error: Could not find features near ' + featureNames + '.')
+        }
+    });
 }
 
 
@@ -708,16 +637,8 @@ function onClickGOTermSuggestions () {
     });
 }
 
-function setSearchBox(text, gseaText = "") {
+function setSearchBox(text) {
     $('#searchFeatures').val(text);
-    // Sync with GSEA box
-    if (gseaText == "") {
-        gseaText = text;
-    }
-    $('#suggestGO > a').attr(
-        'href', '/barplot_gsea?species='+species+'&genes='+gseaText);
-    $('#suggestKEGG > a').attr(
-        'href', '/barplot_gsea?species='+species+'&gene_set=KEGG&genes='+gseaText);
 }
 
 ////////////////////
@@ -729,14 +650,12 @@ $("#log10OnClick" ).click(function() {
     // otherwise use the default data
     $("#logTab").addClass('is-active');
     $("#cpmTab").removeClass('is-active');
-    plotForceRefresh = false;
     updatePlot();
 });
 
 $("#CPMOnClick" ).click(function() {
     $("#logTab").removeClass('is-active');
     $("#cpmTab").addClass('is-active');
-    plotForceRefresh = false;
     updatePlot();
 });
 
@@ -746,7 +665,6 @@ $("#hClusterOnClick" ).click(function() {
     // otherwise use the default data
     $("#hierachicalTab").addClass('is-active');
     $("#originalOrderTab").removeClass('is-active');
-    plotForceRefresh = false;
     updatePlot();
 });
 
@@ -754,7 +672,6 @@ $("#hClusterOnClick" ).click(function() {
 $("#originalOnClick").click(function() {
     $("#originalOrderTab").addClass('is-active');
     $("#hierachicalTab").removeClass('is-active');
-    plotForceRefresh = false;
     updatePlot();
 });
 
@@ -762,30 +679,42 @@ $("#originalOnClick").click(function() {
 $("#heatOnClick").click(function() {
     $("#heatTab").addClass('is-active');
     $("#dotTab").removeClass('is-active');
-    plotForceRefresh = true;
-    updatePlot();
+    updatePlot(true);
 });
 
 $("#dotOnClick").click(function() {
     $("#dotTab").addClass('is-active');
     $("#heatTab").removeClass('is-active');
-    plotForceRefresh = true;
-    updatePlot();
+    updatePlot(true);
 });
 
-// Both on click and load, plot the heatmap
+// Suggestions
+$(".speciesSuggestion").click(onClickSpeciesSuggestions);
+$("#geneSimilar").click(function() {
+    return onClickFeatureSimilarSuggestions("gene_expression");
+});
+$("#regionSimilar").click(function() {
+    return onClickFeatureSimilarSuggestions("chromatin_accessibility");
+});
+$("#geneNearby").click(function() {
+    return onClickFeatureNearbySuggestions("gene_expression");
+});
+$("#regionNearby").click(function() {
+    return onClickFeatureNearbySuggestions("chromatin_accessibility");
+});
+
+// Search
 $("#searchOnClick").click(function() { AssembleAjaxRequest() });
 $("body").keyup(function(event) {
     if (event.keyCode === 13) {
         $("#searchOnClick").click();
     }
 });
+
 $(document).ready(function() {
     $('#pathwaySuggestion > a').click(function() {
         $("body").addClass("loading");
     });
     AssembleAjaxRequest();
 });
-$("#geneSuggestions").click(onClickGeneSuggestions);
-$("#regionSuggestions").click(onClickRegionSuggestions);
-$(".speciesSuggestion").click(onClickSpeciesSuggestions);
+

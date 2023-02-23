@@ -7,36 +7,105 @@ content:    Compress Tabula Sapiens, heart.
 import os
 import sys
 import pathlib
+import gzip
+import h5py
 import numpy as np
 import pandas as pd
-import h5py
+
 import anndata
+import scanpy as sc
 
-
-output_fdn = pathlib.Path('../webapp/static/scData/')
-ts_source_url = 'https://figshare.com/ndownloader/files/34701976'
-
-
-def correct_annotations(adata):
-    '''Overwrite annotations for some cell types'''
-    annotations = pd.read_csv(
-        '../data/tabula_sapiens/reannotations.tsv',
-        sep='\t',
-        index_col=0,
+from utils import (
+    get_tissue_data_dict,
+    subannotate,
+    correct_celltypes,
+    get_celltype_order,
     )
-    column = annotations.columns[0]
-    annotations = pd.Series(annotations.squeeze(axis=1), dtype='category')
 
-    cats_old = adata.obs[column].cat.categories
-    cats_new = list(set(annotations.cat.categories) - set(cats_old))
-    adata.obs[column] = adata.obs[column].cat.add_categories(cats_new)
-    annotations = annotations.cat.set_categories(adata.obs[column].cat.categories)
 
-    adata.obs.loc[annotations.index, column] = annotations
-    adata.obs[column] = adata.obs[column].cat.remove_unused_categories()
+root_repo_folder = pathlib.Path(__file__).parent.parent.parent
+ts_data_folder = root_repo_folder / 'data' / 'full_atlases' / 'tabula_sapiens'
+anno_fn = root_repo_folder / 'data' / 'gene_annotations' / 'Homo_sapiens.GRCh38.109.gtf.gz'
+webapp_fdn = root_repo_folder / 'webapp'
+output_fdn = webapp_fdn / 'static' / 'atlas_data'
+fn_out = output_fdn / 'tabula_sapiens.h5'
+
+
+rename_dict = {
+    'tissues': {
+        'Large_Intestine': 'Colon',
+    },
+    'cell_types': {
+    },
+}
+
+coarse_cell_types = [
+]
+
+
+celltype_order = [
+    ('immune', [
+    ]),
+    ('epithelial', [
+    ]),
+    ('endothelial', [
+    ]),
+    ('mesenchymal', [
+    ]),
+    ('other', [
+    ]),
+    ('unknown', [
+        'unknown',
+    ])
+]
 
 
 if __name__ == '__main__':
+
+    # Remove existing compressed atlas file if present
+    if os.path.isfile(fn_out):
+        os.remove(fn_out)
+
+    compressed_atlas = {}
+
+    tissue_sources = get_tissue_data_dict(ts_data_folder, rename_dict)
+    tissues = list(tissue_sources.keys())
+    for it, (tissue, full_atlas_fn) in enumerate(tissue_sources.items()):
+        print(tissue)
+
+        adata_tissue = anndata.read(full_atlas_fn)
+
+        # Restart from raw data and renormalize
+        adata_tissue = adata_tissue.raw.to_adata()
+
+        # cptt throughout
+        sc.pp.normalize_total(
+            adata_tissue,
+            target_sum=1e4,
+            key_added='coverage',
+        )
+
+        # Fix cell type annotations
+        adata_tissue.obs['cellType'] = correct_celltypes(
+            adata_tissue, 'cell_ontology_class', 'human',
+        )
+
+        # Correction might declare some cells as untyped/low quality
+        # they have an empty string instead of an actual annotation
+        if (adata_tissue.obs['cellType'] == '').sum() > 0:
+            idx = adata_tissue.obs['cellType'] != ''
+            adata_tissue = adata_tissue[idx]
+
+        celltypes = get_celltype_order(
+            adata_tissue.obs['cellType'].value_counts().index,
+            celltype_order,
+        )
+
+        break
+
+
+    sys.exit()
+
 
     # Load data
     print('Load single cell data')
@@ -122,7 +191,7 @@ if __name__ == '__main__':
         'Plasmablast': ['plasma cell'],
         'NK cell': ['nk cell'],
         'IL cell': ['innate lymphoid cell'],
-        'B cell': ['b cell'],
+        'Bcell': ['b cell'],
         'T cell': [
             'T cell',
             'cd8-positive, alpha-beta t cell',

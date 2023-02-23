@@ -6,7 +6,6 @@ content:    Interpret text about differential expression.
 '''
 from .celltypes import (
         validate_correct_celltypestr,
-        rename_celltypes,
         )
 from config import configuration as config
 
@@ -61,9 +60,7 @@ def get_deg_conditions(suffix):
         if idx_deli_ct == -1:
             raise ValueError('Sentence structure for DEG not recognized')
         celltype_raw = prefix_nodataset[idx_deli_ct+len(deli_ct):]
-        celltype = rename_celltypes(
-                [validate_correct_celltypestr(celltype_raw)],
-                inverse=True)[0]
+        celltype = validate_correct_celltypestr(celltype_raw)
 
         conditions = [
             {'celltype': celltype, 'dataset': dataset,
@@ -115,8 +112,7 @@ def get_deg_conditions(suffix):
             raise ValueError('Sentence structure for DEG not recognized')
         celltype_raw = prefix_nodataset[idx_deli_ct+len(deli_ct):]
         print(celltype_raw)
-        celltype = rename_celltypes(
-            [validate_correct_celltypestr(celltype_raw)], inverse=True)[0]
+        celltype = validate_correct_celltypestr(celltype_raw)
 
         conditions = [
             {'celltype': celltype, 'dataset': dataset, 'timepoint': tp1},
@@ -174,8 +170,7 @@ def get_deg_conditions(suffix):
             celltype_raw = celltype_raw[:idx_endct1]
         else:
             celltype_raw = celltype_raw[:min(idx_endct1, idx_endct2)]
-        celltype = rename_celltypes(
-            [validate_correct_celltypestr(celltype_raw)], inverse=True)[0]
+        celltype = validate_correct_celltypestr(celltype_raw)
 
         conditions = [
             {'celltype': celltype, 'dataset': dataset,
@@ -196,7 +191,6 @@ def get_deg_conditions(suffix):
     celltypes = celltypestr_vali.split(',')
     if len(celltypes) != 2:
             raise ValueError('Sentence structure for DEG not recognized')
-    celltypes = rename_celltypes(celltypes, inverse=True)
     ct1, ct2 = celltypes
     # Find time point
     deli_tp = ' at '

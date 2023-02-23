@@ -10,86 +10,26 @@ from scipy.spatial.distance import pdist
 
 from config import configuration as config
 from validation.celltypes import (
-        adjust_celltypes,
-        rename_celltypes,
         validate_correct_celltypestr,
         )
 from validation.differential_expression import get_deg_conditions
-
-
-celltypes = config['order']['celltypes']
-feature_types = config['feature_types']
-fn_atlasd = config['paths']['compressed_atlas']
-fn_GO = config['paths']['pathways']['GO']['mouse']
-
-
-def read_feature_order(
-        feature_type='gene_expression',
-        species='mouse',
-        ):
-    fn_atlas = fn_atlasd[species]
-    with h5py.File(fn_atlas, "r") as h5_data:
-        features = np.array(h5_data[feature_type]["features"].asstr())
-    feature_order = pd.Series(data=np.arange(len(features)), index=features)
-    return feature_order
-
-
-def read_cell_types(species='mouse'):
-    return np.asarray(celltypes)
-
-
-def read_gene_order(species='mouse'):
-    return read_feature_order(
-            feature_type='gene_expression',
-            species=species,
-            )
-
-
-def read_regions_order(species='mouse'):
-    return read_feature_order(
-            feature_type='chromatin_accessibility',
-            species=species,
-            )
-
-
-def read_gene_annotations(species='mouse'):
-    fn_atlas = fn_atlasd[species]
-    with h5py.File(fn_atlas, "r") as h5_data:
-        genes = np.array(h5_data['gene_expression']["features"].asstr())
-        group = h5_data['gene_expression']['feature_annotations']
-        start = group['start_position'][:]
-        end = group['end_position'][:]
-        chromosome = np.array(group['chromosome_name'].asstr())
-        strand = group['strand'][:]
-        tss = group['transcription_start_site'][:]
-    annotations = pd.DataFrame({
-        'start': start, 'end': end, 'chrom': chromosome, 'strand': strand,
-        'tss': tss,
-    }, index=genes)
-    return annotations
-
-
-def read_region_annotations(species='mouse'):
-    fn_atlas = fn_atlasd[species]
-    with h5py.File(fn_atlas, "r") as h5_data:
-        regions = np.array(h5_data['chromatin_accessibility']["features"].asstr())
-    df = pd.DataFrame([], index=regions)
-    tmp = df.index.str.split('-', expand=True)
-    df['chrom'] = tmp.get_level_values(0)
-    df['start'] = tmp.get_level_values(1).astype(int)
-    df['end'] = tmp.get_level_values(2).astype(int)
-    # Use integer division to speed up computations a little bit
-    df['mid'] = (df['start'] + df['end']) // 2
-    return df
-
-
-def read_feature_annotations(feature_type, species='mouse'):
-    if feature_type == 'gene_expression':
-        return read_gene_annotations(species=species)
-    elif feature_type == 'chromatin_accessibility':
-        return read_region_annotations(species=species)
-    else:
-        raise ValueError(f'Feature type not found: {feature_type}')
+from models.assets import (
+    feature_types,
+    fn_atlasd,
+    fn_GO,
+)
+from models.basics import (
+    read_tissues,
+    read_feature_order,
+    read_cell_types,
+    read_gene_order,
+    read_regions_order,
+)
+from models.annotations import (
+    read_gene_annotations,
+    read_region_annotations,
+    read_feature_annotations,
+)
 
 
 feature_orderd = {}
@@ -242,13 +182,6 @@ def get_data_overtime_1feature(
     countg.index = countg.index.str.split('_', 1, expand=True)
     countg = countg.unstack(0, fill_value=-1).loc[ncells.index]
     ncells = ncells.loc[:, countg.columns]
-
-    # Set canonical celltype names and order
-    celltypes_adj, idx = adjust_celltypes(ncells.columns, species=species)
-    ncells = ncells.iloc[:, idx]
-    countg = countg.iloc[:, idx]
-    ncells.columns = celltypes_adj
-    countg.columns = celltypes_adj
 
     # Sort the columns
     distance = pdist(countg.T.values)
@@ -652,9 +585,6 @@ def get_data_disease(features=None, feature_type='gene_expression'):
             for key, df in df_dict.items():
                 dfi = df.loc[df.index.str.endswith(f'{ds}_{tp}')]
                 dfi.index = dfi.index.str.split('_', expand=True).get_level_values(0)
-                # Adjust cell type names and order
-                celltypes_adj, idx = adjust_celltypes(dfi.index)
-                dfi = dfi.iloc[idx]
                 item[key] = dfi
             result.append(item)
 
@@ -678,9 +608,6 @@ def get_celltype_abundances(timepoint, dataset='ACZ', kind='qualitative', specie
 
     # Sort them naturally
     fracs.sort_values(ascending=False, inplace=True)
-
-    # Rename to pretty names
-    fracs.index = rename_celltypes(fracs.index)
 
     result = {
         'major': [],

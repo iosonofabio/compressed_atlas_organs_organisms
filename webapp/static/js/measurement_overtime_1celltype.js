@@ -1,71 +1,156 @@
+import { computeMarkerSizeOvertime } from './plotUtils.js';
+
 var plotData = {};
 
-function plotExpressionOvertime1Celltype(result, scaleData, celltypeOrder) {
-    let celltype = result['celltype'];
-    let x_axis;
-    if (celltypeOrder === "original") {
-        x_axis = result['features'];
-    } else {
-        x_axis = [];
-        for (let i = 0; i < result['features_hierarchical'].length; i++) {
-            const gene = result['features_hierarchical'][i];
-            x_axis.push(gene);
-        }
-    }
+function plotMeasurementOvertime1Celltype(
+    result,
+    scaleData,
+    tableOrder) {
+
+    let htmlDivId = 'plotDiv';
+    let htmlDiv = document.getElementById(htmlDivId);
+
+    let nPlots = result['data'].length;
     let y_axis = result['row_labels'];
-    let nx = x_axis.length;
-    let ny = y_axis.length;
-    var graph_width = Math.min(1300, Math.max(500, 270 + 60 * nx));
-    var graph_height = 270 + 26 * ny;
-
-    let title = 'Gene expression over time in ' + celltype;
-
-    let x = [],
-        y = [],
-        tooltips = [],
-        markersize = [],
-        markeropacity = [],
-        markercolor = [];
-    let ms, opacity;
-    for (let i = 0; i < y_axis.length; i++) {
-        const label = y_axis[i];
-        for (let j = 0; j < x_axis.length; j++) {
-            const gene = x_axis[j];
-            let nc = result['ncells'][label]
-            let ge = result['measurement'][label][gene]
-            if (scaleData == "log10") {
-                ge = Math.log10(ge + 0.5);
+    let x_axiss;
+    if (tableOrder === "original") {
+        x_axiss = result['features'];
+    } else {
+        x_axiss = [];
+        for (let k=0; k < nPlots; k++) {
+            x_axiss.push([]);
+            for (let i = 0; i < result['features_hierarchical'][k].length; i++) {
+                const feature = result['features_hierarchical'][k][i];
+                x_axiss[k].push(feature);
             }
-            const labelArray = label.split("_");
-            const tooltip = "Expression: "+ge+", Dataset: "+labelArray[1]+", Time point: "+labelArray[2];
-            if (nc == 0) {
-                ms = 2;
-            } else if (nc < 5) {
-                ms = 8;
-            } else if (nc < 40) {
-                ms = 13;
-            } else {
-                ms = 20;
-            }
-            opacity = 1.0;
-            x.push(gene)
-            y.push(label)
-            markercolor.push(ge);
-            markeropacity.push(opacity);
-            markersize.push(ms);
-            tooltips.push(tooltip);
         }
     }
 
-    let data = {
-        mode: 'markers',
-        marker: {
-            symbol: 'square',
-            colorscale: 'Reds',
-            colorbar: {},
+    let longestYlabel = 0, longestXlabel = 0;
+    for (let i=0; i < y_axis.length; i++) {
+        longestYlabel = Math.max(longestYlabel, result['row_labels'][i].length);
+    }
+    for (let k=0; k < nPlots; k++) {
+        for (let i=0; i < x_axiss[k].length; i++) {
+            longestXlabel = Math.max(longestXlabel, result['features'][k][i].length);
+        }
+    }
+
+    let celltype = result['celltype'];
+    let nfeatures = x_axiss.reduce((acc, a) => acc + a.length, 0);
+    let ny = y_axis.length;
+    let pxCell = 40, pxChar = 4.2, plotGap = 10;
+    let ytickMargin = 75 + pxChar * longestYlabel;
+    let xtickMargin = 15 + pxChar * longestXlabel;
+    let graphWidth = ytickMargin + pxCell * nfeatures + plotGap * (nPlots - 1) + 60;
+    let graphHeight = pxCell * ny + xtickMargin;
+
+    let xAxisDomains = [];
+    let acc = 0;
+    for (let k=0; k < nPlots; k++) {
+        let frac = 1.0 * result['features'][k].length / nfeatures;
+        xAxisDomains.push([acc, acc + frac]);
+        acc += frac;
+    }
+
+    let xs = [],
+        ys = [],
+        tooltipss = [],
+        markersizes = [],
+        markercolors = [];
+    let measurement, ms;
+    for (let k=0; k < nPlots; k++) {
+        xs.push([]);
+        ys.push([]);
+        markercolors.push([]);
+        markersizes.push([]);
+        tooltipss.push([]);
+        for (let i = 0; i < y_axis.length; i++) {
+            const label = y_axis[i];
+            for (let j = 0; j < x_axiss[k].length; j++) {
+                const feature = x_axiss[k][j];
+                xs[k].push(feature);
+                ys[k].push(label);
+
+                // this time point is missing from this feature type
+                if (!(label in result['data'][k])) {
+                    measurement = -1;
+                    ms = 0;
+                } else {
+                    measurement = result['data'][k][label][feature];
+                    // FIXME: change the pseudocount for ATAC
+                    if (scaleData == "log10") {
+                        measurement = Math.log10(measurement + 0.5);
+                    }
+                    ms = computeMarkerSizeOvertime(result['ncells'][k][label][celltype]);
+                }
+                markercolors[k].push(measurement);
+                markersizes[k].push(ms);
+
+                const labelArray = label.split("_");
+                const tooltip = "Measurement: "+measurement+", Dataset: "+labelArray[1]+", Time point: "+labelArray[2];
+                tooltipss[k].push(tooltip);
+            }
+        }
+    }
+
+    let layout = {
+        grid: {
+            rows: 1,
+            columns: nPlots,
         },
-        'hoverinfo': 'text',
+        margin: {
+            l: ytickMargin,
+            r: 0,
+            b: 0,
+            t: 0,
+            pad: 4,
+        },
+        autosize: true,
+        width: graphWidth,
+        height: graphHeight,
+        yaxis: {
+            automargin: true,
+            autorange: 'reversed',
+            type: 'category',
+            tickvals: result['yticks'],
+            ticktext: result['yticktext'],
+        },
     };
+
+    let traces = [];
+    for (let k=0; k < nPlots; k++) {
+        let xaxisName = 'xaxis', xaxisShort = 'x';
+        if (k != 0) {
+            xaxisName += (k+1);
+            xaxisShort += (k+1);
+        }
+        layout[xaxisName] = {
+            tickangle: 270,
+            automargin: true,
+            linewidth: 0,
+            type: 'category',
+            scaleanchor: 'y',
+            scaleratio: 1,
+            domain: xAxisDomains[k],
+        };
+
+        traces.push({
+            mode: 'markers',
+            x: xs[k],
+            y: ys[k],
+            text: tooltipss[k],
+            marker: {
+                symbol: 'square',
+                colorscale: 'Reds',
+                colorbar: {},
+                color: markercolors[k],
+                size: markersizes[k],
+            },
+            'hoverinfo': 'text',
+            xaxis: xaxisShort,
+        });
+    }
 
     let config = {
         modeBarButtonsToRemove: ['toImage'],
@@ -84,44 +169,7 @@ function plotExpressionOvertime1Celltype(result, scaleData, celltypeOrder) {
               Plotly.downloadImage(gd, {format: 'svg'})
             }
           },
-        ],
-    }
-
-    // Make new plot if none is present
-    if ($('#measurementPlot').html() === "") {
-        data['x'] = x;
-        data['y'] = y;
-        data['text'] = tooltips;
-        data['marker']['color'] = markercolor;
-        data['marker']['size'] = markersize;
-        data['marker']['opacity'] = opacity;
-
-        let layout = {
-            automargin: true,
-            autosize: true,
-            width: graph_width,
-            height: graph_height,
-            title: {
-                text: title,
-                x: 0.5,
-                xanchor: 'center',
-            },
-            xaxis: {
-                tickangle: 270,
-                automargin: true,
-                linewidth: 0,
-                type: 'category',
-            },
-            yaxis: {
-                //automargin: true,
-                autorange: 'reversed',
-                type: 'category',
-                tickvals: result['yticks'],
-                ticktext: result['yticktext'],
-            },
-        };
-
-        config["modeBarButtonsToAdd"].push({
+          {
             name: 'Download data as CSV',
             icon: Plotly.Icons.disk,
             click: function(gd) {
@@ -129,7 +177,7 @@ function plotExpressionOvertime1Celltype(result, scaleData, celltypeOrder) {
                 let geneExps = gd['data'][0]['marker']['color'];
                 const nct = x_axis.length;
                 // Header with cell type names
-                text += 'Gene';
+                text += 'Feature';
                 for(var i = 0; i < nct; i++){
                     text += ',' + gd['data'][0]['x'][i];
                 };
@@ -151,53 +199,32 @@ function plotExpressionOvertime1Celltype(result, scaleData, celltypeOrder) {
                 a.click();
                 URL.revokeObjectURL(object_URL);
             },
-        });
+          }
+        ], 
+    }
 
-        Plotly.newPlot(
-            document.getElementById('measurementPlot'),
-            [data],
-            layout,
-            config,
-        ); 
+    // Make new plot if none is present
+    if ($('#measurementPlot').html() === "") {
+        Plotly.newPlot(htmlDiv, traces, layout, config); 
 
     // Update existing plot if present
     } else {
-        data['x'] = [x];
-        data['y'] = [y];
-        data['text'] = [tooltips];
-        data['marker']['color'] = markercolor;
-        data['marker']['size'] = markersize;
-        data['marker']['opacity'] = opacity;
-        Plotly.update(
-            document.getElementById('measurementPlot'),
-            data,
-            {
-                title: {
-                    text: title,
-                },
-                yaxis: {
-                autorange: "reversed",
-                type: 'category',
-                tickvals: result['yticks'],
-                ticktext: result['yticktext'],
-            }},
-            [0],
-        );
+        Plotly.react(htmlDiv, traces, layout, config); 
     }
 }
 
 
-function AssembleAjaxRequest( genestring = "") {
-    let geneNames;
-    if (genestring !== "") {
-        geneNames = genestring;
+function AssembleAjaxRequest( featurestring = "") {
+    let featureNames;
+    if (featurestring !== "") {
+        featureNames = featurestring;
     } else {
-        geneNames = $('#searchFeatures').val();
+        featureNames = $('#searchFeatures').val();
     }
 
     let requestData = {
         celltype: celltype,
-        gene_names: geneNames,
+        feature_names: featureNames,
         species: species,
     }
     $.ajax({
@@ -207,29 +234,12 @@ function AssembleAjaxRequest( genestring = "") {
         dataType:'json',
         success: function(result) {
             plotData = result;
-            
-            updateSimilarGenes();
-
             updatePlot();
         },
         error: function (e) {
           alert('Request data Failed')
         }
     });
-}
-
-
-function updateSimilarGenes() {
-    let similarGenes = plotData['similarGenes'];
-    $('#geneSuggestions').text('Add features:');
-    for (let i = 0; i < similarGenes.length; i++) {
-        const gene = similarGenes[i];
-        $('#geneSuggestions').append(
-            '<span class="geneSuggestion suggestButton" id="suggest'+gene+'">'+gene+'</span>'
-        )
-    }
-    // Rebind the callback since the old elements are gone
-    $(".geneSuggestion").click(onClickGeneSuggestions);
 }
 
 // Check another species, same gene
@@ -253,8 +263,6 @@ function onClickSpeciesSuggestions() {
             $("#suggest"+newSpecies).text(species.slice(0, 1).toUpperCase()+species.slice(1)).prop('id', "suggest"+species);
             species = newSpecies;
 
-            updateSimilarGenes();
-
             // Update search box: corrected gene names, excluding missing features
             setSearchBox(result['gene']);
 
@@ -268,18 +276,30 @@ function onClickSpeciesSuggestions() {
 
 
 // Check out a similar gene
-function onClickGeneSuggestions() {
-    var gene = $('#searchFeatures').val();
-    var newGene = $(this).text();
+function onClickFeatureSuggestions(correlatesType) {
+    var featureNames = $('#searchFeatures').val();
 
-    // swap button and search box
-    // NOTE: this is not recursive, but easier to implement
-    // API-wise, recursive approach would be more consistent
-    $(this).text("");
-    $('#searchFeatures').val(gene + "," + newGene);
+    let requestData = {
+        feature_names: featureNames,
+        species: species,
+        correlates_type: correlatesType,
+    }
+    $.ajax({
+        type:'GET',
+        url:'/data/features_correlated',
+        data: $.param(requestData),
+        success: function(result) {
+            // Update search box: corrected feature names, excluding missing ones
+            setSearchBox(result);
 
-    // Get new data and plot
-    AssembleAjaxRequest();
+            // Request data
+            AssembleAjaxRequest();
+        },
+        error: function (e) {
+          alert('Error: Could not find genes correlated with ' + featureNames + '.')
+        }
+    });
+
 }
 
 
@@ -298,7 +318,7 @@ function setSearchBox(text, gseaText = "") {
 
 
 function updatePlot() {
-    let scaleData, celltypeOrder;
+    let scaleData, tableOrder;
     
     if ($("#cpmTab").hasClass('is-active')) {
       scaleData = "original";
@@ -307,19 +327,13 @@ function updatePlot() {
     } 
     
     if ($("#originalOrderTab").hasClass('is-active')) {
-        geneOrder = "original";
+        tableOrder = "original";
     } else {
-        geneOrder = "hierarchical";
+        tableOrder = "hierarchical";
     }
 
-    plotExpressionOvertime1Celltype(plotData, scaleData, geneOrder);
+    plotMeasurementOvertime1Celltype(plotData, scaleData, tableOrder);
 }
-
-$("#searchOnClick").click(function() { AssembleAjaxRequest() });
-$(document).ready(function() { AssembleAjaxRequest() });
-$(".geneSuggestion").click(onClickGeneSuggestions);
-$(".speciesSuggestion").click(onClickSpeciesSuggestions);
-$(".celltypeSuggestion").click(onClickCelltypeSuggestions);
 
 // Normalise the data with log10 and generate a new plot (when user click the button)
 $("#log10OnClick" ).click(function() {
@@ -353,8 +367,24 @@ $("#originalOnClick" ).click(function() {
     updatePlot();
 });
 
+// Suggestions
+$(".speciesSuggestion").click(onClickSpeciesSuggestions);
+$(".celltypeSuggestion").click(onClickCelltypeSuggestions);
+$("#geneSuggestions").click(function() {
+    return onClickFeatureSuggestions("gene_expression");
+});
+$("#regionSuggestions").click(function() {
+    return onClickFeatureSuggestions("chromatin_accessibility");
+});
+
+// Search
+$("#searchOnClick").click(function() { AssembleAjaxRequest() });
 $("body").keyup(function(event) {
     if (event.keyCode === 13) {
         $("#searchOnClick").click();
     }
+});
+
+$(document).ready(function() {
+    AssembleAjaxRequest()
 });
