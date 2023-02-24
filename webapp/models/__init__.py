@@ -4,55 +4,30 @@ import numpy as np
 import pandas as pd
 from scipy.cluster.hierarchy import linkage, leaves_list
 from scipy.spatial.distance import pdist
+from urllib.parse import urlencode
 
 from config import configuration as config
 from validation.celltypes import (
         validate_correct_celltypestr,
         )
-from validation.differential_expression import get_deg_conditions
+from validation.differential_measurement import get_differential_conditions
+from models.lazy import (
+        get_tissues,
+        get_celltypes,
+        get_feature_orderd,
+        get_feature_annotationd,
+        get_feature_annotation,
+        get_gene_annotationd,
+        get_region_annotationd,
+        get_gene_matrixd,
+        )
 from models.assets import (
-    feature_types,
-    fn_atlasd,
-    fn_GO,
-)
-from models.basics import (
-    read_tissues,
-    read_feature_order,
-    read_cell_types,
-    read_gene_order,
-    read_regions_order,
-)
-from models.annotations import (
-    read_gene_annotations,
-    read_region_annotations,
-    read_feature_annotations,
-)
+        feature_types,
+        fn_atlasd,
+        fn_GO,
+        pseudocountd,
+        )
 
-
-feature_orderd = {}
-for ft in feature_types:
-    feature_orderd[ft] = {}
-    for species in fn_atlasd:
-        feature_orderd[ft][species] = read_feature_order(
-                species=species,
-                feature_type=ft,
-                )
-feature_annotationd = {}
-for ft in feature_types:
-    feature_annotationd[ft] = {}
-    for species in fn_atlasd:
-        feature_annotationd[ft][species] = read_feature_annotations(
-                feature_type=ft,
-                species=species,
-                )
-
-
-def get_gene_annotationd(species):
-    return feature_annotationd['gene_expression'][species]
-
-
-def get_region_annotationd(species):
-    return feature_annotationd['chromatin_accessibility'][species]
 
 
 def get_counts(
@@ -74,7 +49,7 @@ def get_counts(
         key: Whether to return the gene expression average or the fraction
           of expressing cells.
     '''
-    feature_order = feature_orderd[feature_type][species]
+    feature_order = get_feature_orderd(feature_type, species)
 
     fn_atlas = fn_atlasd[species]
     with h5py.File(fn_atlas, "r") as h5_data:
@@ -115,13 +90,13 @@ def get_counts(
         # NOTE: Should be float32 already, check
         counts = counts[:].astype(np.float32)
 
-    df = pd.DataFrame(
+    dataframe = pd.DataFrame(
             data=counts.T,
             index=index,
             columns=columns,
             )
 
-    return df
+    return dataframe
 
 
 def get_number_cells(
@@ -163,6 +138,9 @@ def get_data_overtime_1feature(
             species=species,
             feature_type=feature_type,
             ).iloc[0]
+
+    # FIXME: this should not be necessary!
+    countg = countg.fillna(0)
 
     # Sort the rows
     timepoint_order = config['order']['timepoint'][species]
@@ -225,7 +203,6 @@ def get_data_overtime_1celltype(
     and see what we can do. The positive is that a bunch of computations
     happen on the server... wait, is that good?
     '''
-    from plotly import colors as pcolors
 
     ncells = get_number_cells(
             'celltype_dataset_timepoint',
@@ -305,7 +282,7 @@ def get_data_overtime_1celltype(
         }
 
 
-def get_correlated(
+def get_features_correlated(
         features,
         species="mouse",
         feature_type='gene_expression',
@@ -313,16 +290,16 @@ def get_correlated(
         data_type='celltype',
         chain=True,
         correlation_min=0.15,
+        nmax=None,
         ):
     '''Get features that are "friends" (correlated) with a list of features'''
     if len(features) == 0:
         if chain:
             return ''
-        else:
-            return {}
+        return {}
 
     # Compute on the fly, it's around 15ms per feature
-    features_all = feature_orderd[feature_type][species]
+    features_all = get_feature_orderd(feature_type, species)
     idx = features_all.loc[features].values
 
     counts_fea = get_counts(
@@ -338,7 +315,7 @@ def get_correlated(
         countsc_corr = countsc_fea
         sigma_corr = sigma_fea
     else:
-        features_corr = feature_orderd[correlates_type][species]
+        features_corr = get_feature_orderd(correlates_type, species)
         counts_corr = get_counts(
             data_type,
             feature_type=correlates_type,
@@ -353,7 +330,7 @@ def get_correlated(
         correlates = {}
     for i in idx:
         corr_i = (countsc_fea[:, i] * countsc_corr.T).mean(axis=1)
-        den_i = (sigma_fea[i] * sigma_corr.T)
+        den_i = (sigma_fea[i] * sigma_corr.T) + 1e-8
         corr_i /= den_i
         corr_i[np.isnan(corr_i)] = 0
 
@@ -370,6 +347,9 @@ def get_correlated(
 
         correlates_i = features_corr.index[itop]
 
+        if nmax is not None:
+            correlates_i = correlates_i[:nmax]
+
         if chain:
             for feature in correlates_i:
                 if feature not in correlates:
@@ -380,8 +360,100 @@ def get_correlated(
 
     if chain:
         return ",".join(correlates)
+    return correlates
+
+
+def get_features_nearby(
+        features,
+        species="mouse",
+        target_types=['gene_expression'],
+        chain=True,
+        dmax=50000,
+        include_query=False,
+        ):
+    '''Get features that are "friends" (correlated) with a list of features'''
+    if isinstance(features, str):
+        features = features.split(',')
+
+    if len(features) == 0:
+        if chain:
+            return ''
+        return {}
+
+    if chain:
+        targets = []
     else:
-        return correlates
+        targets = {x: [] for x in features}
+
+    for target_type in target_types:
+        target_annos = get_feature_annotationd(target_type, species)
+        chroms = target_annos['chrom']
+
+        # NOTE: Poor man's fix to inconsistencies in chromosome names
+        if chroms.str.startswith('chr').sum() > 0:
+            chr_hack = 'add'
+        else:
+            chr_hack = 'remove'
+
+        for feature in features:
+            feature_annod = get_feature_annotation(feature, species)
+            feature_type = feature_annod['feature_type']
+            feature_anno = feature_annod['annotation']
+            chrom = feature_anno['chrom']
+
+            if (chr_hack == 'add') and (not chrom.startswith('chr')):
+                chrom = 'chr' + chrom
+            elif (chr_hack == 'remove') and chrom.startswith('chr'):
+                chrom = chrom[3:]
+
+            target_annos_chrom = target_annos.loc[chroms == chrom]
+
+            if len(target_annos_chrom) == 0:
+                targets_i = []
+            else:
+                start = feature_anno['start']
+                end = feature_anno['end']
+                starts = target_annos_chrom['start']
+                ends = target_annos_chrom['end']
+                overlap_i = (starts < end) & (ends > start)
+
+                overlap_i = target_annos_chrom.index[overlap_i].tolist()
+
+                dist_i = np.min([
+                        (starts - end).abs(),
+                        (ends - start).abs(),
+                        ], axis=0)
+
+                # Self is always the highest
+                if feature_type == target_type:
+                    itop = np.argsort(dist_i)[1:6]
+                else:
+                    itop = np.argsort(dist_i)[:5]
+
+                # Cutoff
+                tmp = dist_i[itop]
+                tmp = tmp[tmp <= dmax]
+                itop = itop[:len(tmp)]
+
+                targets_i = overlap_i + list(target_annos_chrom.index[itop])
+
+            if chain:
+                for feature in targets_i:
+                    if feature not in targets:
+                        targets.append(feature)
+            else:
+                targets[feature].extend(targets_i)
+
+    if include_query:
+        if chain:
+            targets = features + targets
+        else:
+            for feature in features:
+                targets[feature] = np.array([feature] + list(targets[feature]))
+
+    if chain:
+        return ",".join(targets)
+    return targets
 
 
 def get_marker_features(
@@ -389,10 +461,8 @@ def get_marker_features(
         species='mouse',
         feature_type='gene_expression',
         chain=True,
-        ntop=10,
-    ):
+        ntop=10):
     '''Get markers for cell types'''
-    from validation.celltypes import celltype_dict
 
     celltype_dict_inv = {val: key for key, val in celltype_dict.items()}
     celltype_dict_inv.update({ct: ct for ct in celltype_dict_inv.values()})
@@ -406,30 +476,36 @@ def get_marker_features(
     else:
         key = 'average'
 
-    features_all = feature_orderd[feature_type][species]
+    features_all = get_feature_orderd(feature_type, species)
     counts = get_counts(
         'celltype',
         feature_type=feature_type,
         species=species,
         key=key,
     )
-
     if chain:
         markers = []
     else:
         markers = {}
 
-    for ct in celltypes:
-        if ct not in celltypes:
+    # Go over the requested cell types
+    for celltype in celltypes:
+        if celltype not in counts.columns:
             return None
 
-        i = celltypes.index(ct)
-        val_ct = counts[i]
-        val_other = counts[[j for j in range(ncts) if j != i]]
-        diff_closest = val_ct - val_other.max(axis=0)
-        diff_avg = val_ct - val_other.mean(axis=0)
+        val_ct = counts[celltype].values
 
-        idx_cand = list(set(np.argsort(diff_closest)[-ntop:]) | set(np.argsort(diff_avg)[-ntop:]))
+        other_celltypes = [x for x in counts.columns if x != celltype]
+        val_other = counts[other_celltypes].values
+
+        diff_closest = val_ct - val_other.max(axis=1)
+        diff_avg = val_ct - val_other.mean(axis=1)
+
+        # Candidate markers: either up compared to closest, or compared to
+        # average cell type
+        idx_cand = list(
+            set(np.argsort(diff_closest)[-ntop:]) | set(np.argsort(diff_avg)[-ntop:]),
+        )
         cands = list(features_all.iloc[idx_cand].index)
 
         if chain:
@@ -437,61 +513,80 @@ def get_marker_features(
                 if cand not in markers:
                     markers.append(cand)
         else:
-            markers[ct] = cands
+            markers[celltype] = cands
 
     if chain:
         return ",".join(markers)
-    else:
-        return markers
+    return markers
 
 
-def get_de_url(suffix, kind='both'):
-    '''Get differential expression url for up-, downregulated genes, or both'''
-    from urllib.parse import urlencode
+def get_differential_url(
+        suffix,
+        feature_type='gene_expression',
+        kind='both',
+        n_features=20):
+    '''Get differential expression url for up-, downregulated features, or both'''
+    baseline = config.get('baseline', 'normal').lower()
 
-    deg_dict = get_deg_conditions(suffix)
-    deg_request = {
-        'comparison': deg_dict['kind'],
-        'ct1': deg_dict['conditions'][0]['celltype'],
-        'ct2': deg_dict['conditions'][1]['celltype'],
-        'ds1': deg_dict['conditions'][0]['dataset'],
-        'ds2': deg_dict['conditions'][1]['dataset'],
-        'tp1': deg_dict['conditions'][0]['timepoint'],
-        'tp2': deg_dict['conditions'][1]['timepoint'],
-        'dis1': deg_dict['conditions'][0].get('disease', 'normal'),
-        'dis2': deg_dict['conditions'][1].get('disease', 'normal'),
+    diff_dict = get_differential_conditions(suffix)
+    diff_request = {
+        'feature_type': feature_type,
+        'comparison': diff_dict['kind'],
+        'ct1': diff_dict['conditions'][0]['celltype'],
+        'ct2': diff_dict['conditions'][1]['celltype'],
+        'ds1': diff_dict['conditions'][0]['dataset'],
+        'ds2': diff_dict['conditions'][1]['dataset'],
+        'tp1': diff_dict['conditions'][0]['timepoint'],
+        'tp2': diff_dict['conditions'][1]['timepoint'],
+        'dis1': diff_dict['conditions'][0].get('condition', baseline),
+        'dis2': diff_dict['conditions'][1].get('condition', baseline),
         'kind': kind,
+        'n_features': n_features,
     }
-    deg_request['n_genes'] = deg_request.get('n_genes', 20)
-    url = urlencode(deg_request)
+    url = urlencode(diff_request)
     return url
 
 
-def get_data_differential(conditions, kind='both', n_genes=20, genes=None, species='mouse'):
-    '''Get differentially expressed, up- or downregulated genes
+def get_data_differential(
+        conditions,
+        kind='both',
+        n_features=20,
+        features=None,
+        feature_type='gene_expression',
+        species='mouse',
+        ):
+    '''Get differentially expressed, up- or downregulated features
 
     the special phease " in " separated the split (e.g. disease) from
     the celltype/timepoint/dataset specification (e.g. basophil ACZ P7)
     '''
+    condition_name = config['condition'].lower()
+    baseline_name = config.get('baseline', 'normal').lower()
+
     # If requested, compute DEGs on the fly
-    if genes is None:
+    if features is None:
         dfs = []
+
     # In any case, collect data to show in the heatmap
     dfs_alltypes = []
     for condition in conditions:
-        if condition.get('disease', 'normal') == "disease":
+        if condition.get('condition', baseline_name) == condition_name:
             dfi = get_counts(
              'celltype_dataset_timepoint_disease',
-             genes=genes,
+             features=features,
+             feature_type=feature_type,
+             species=species,
              )
         else:
             dfi = get_counts(
                 'celltype_dataset_timepoint',
-                genes=genes,
+                features=features,
+                feature_type=feature_type,
+                species=species,
                 )
 
         # Get data for only this condition if computation of DEGs is requested
-        if genes is None:
+        if features is None:
             idx_col = '_'.join([
                 condition['celltype'],
                 condition['dataset'],
@@ -506,51 +601,72 @@ def get_data_differential(conditions, kind='both', n_genes=20, genes=None, speci
         idx_col = dfi.columns.str.contains(
                 '_'+condition['dataset']+'_'+condition['timepoint'])
         dfi_alltypes = dfi.loc[:, idx_col]
+
         # Rename the columns as the cell types
         dfi_alltypes.columns = [x.split('_')[0] for x in dfi_alltypes.columns]
         dfs_alltypes.append(dfi_alltypes)
 
-    if genes is None:
+    if features is None:
         # Get log2 fold change
-        log2fc = np.log2(dfs[0] + 0.5) - np.log2(dfs[1] + 0.5)
+        log2fc = np.log2(dfs[0] + pseudocountd[feature_type]) - \
+                np.log2(dfs[1] + pseudocountd[feature_type])
 
         # Get DEGs
-        deg_up = log2fc.nlargest(n_genes).index.tolist()
-        deg_down = log2fc.nsmallest(n_genes).index.tolist()
-        genes = deg_up + deg_down[::-1]
+        dmg_up = log2fc.nlargest(n_features).index.tolist()
+        dmg_down = log2fc.nsmallest(n_features).index.tolist()
+
+        if kind == 'up':
+            features = dmg_up
+        elif kind == 'down':
+            features = dmg_down
+        else:
+            features = dmg_up
+            for fea in dmg_down[::-1]:
+                if fea not in features:
+                    features.append(fea)
 
     # Use or recycle data to make heatmap
     # FIXME: make an expected total ordering including disease
     celltypes = dfs_alltypes[0].columns.tolist()
-    for ct in dfs_alltypes[1].columns:
-        if ct not in celltypes:
-            celltypes.append(ct)
-    dfs_alltypes = [dfi.loc[genes] for dfi in dfs_alltypes]
+    for celltype in dfs_alltypes[1].columns:
+        if celltype not in celltypes:
+            celltypes.append(celltype)
+    dfs_alltypes = [dfi.loc[features] for dfi in dfs_alltypes]
     for i, dfi in enumerate(dfs_alltypes):
-        for ct in celltypes:
-            if ct not in dfi.columns:
-                dfi[ct] = 0
+        for celltype in celltypes:
+            if celltype not in dfi.columns:
+                dfi[celltype] = 0
         dfs_alltypes[i] = dfi
 
     return dfs_alltypes
 
 
-def get_data_disease(features=None, feature_type='gene_expression'):
-    '''Get heatmap data for disease'''
+def get_data_condition(
+        features=None,
+        feature_type='gene_expression',
+        species='mouse',
+        datasets=None,
+        ):
+    '''Get heatmap data for non-baseline conditions, e.g. disease
+
+    You can limit it to specific datasets with the keyword arg.
+    '''
     df_ho = get_counts(
         'celltype_dataset_timepoint_disease',
         features=features,
         feature_type=feature_type,
+        species=species,
         )
 
     df_normal = get_counts(
             'celltype_dataset_timepoint',
             features=features,
             feature_type=feature_type,
+            species=species,
         )
     # Restrict to disease celltypes, datasets, and timepoints
     # NOTE: no dataset took disease from a timepoint that has no normal.
-    # However, come cell types are disease-specific
+    # However, some cell types might be condition-specific
     for key in df_ho:
         if key not in df_normal.columns:
             # Default to zero expression
@@ -562,25 +678,28 @@ def get_data_disease(features=None, feature_type='gene_expression'):
     result = []
 
     # Check which datasets have disease
-    dataset_timepoints = config['defaults']['disease']['dataset_timepoint']
-    datasets = []
+    dataset_timepoints = config['defaults']['condition']['dataset_timepoint']
+    datasets_chosen = []
     timepointd = {}
     for dstp in dataset_timepoints:
         dataset, timepoint = dstp.split('_')
-        if dataset not in datasets:
-            datasets.append(dataset)
+        # If restricted to certain datasets, skip the rest
+        if (datasets is not None) and (dataset not in datasets):
+            continue
+        if dataset not in datasets_chosen:
+            datasets_chosen.append(dataset)
         if dataset not in timepointd:
             timepointd[dataset] = []
         timepointd[dataset].append(timepoint)
 
-    for ds in datasets:
-        for tp in timepointd[ds]:
+    for dataset in datasets_chosen:
+        for timepoint in timepointd[dataset]:
             item = {
-                'dataset': ds,
-                'timepoint': tp,
+                'dataset': dataset,
+                'timepoint': timepoint,
             }
             for key, df in df_dict.items():
-                dfi = df.loc[df.index.str.endswith(f'{ds}_{tp}')]
+                dfi = df.loc[df.index.str.endswith(f'{dataset}_{timepoint}')]
                 dfi.index = dfi.index.str.split('_', expand=True).get_level_values(0)
                 item[key] = dfi
             result.append(item)
@@ -588,12 +707,19 @@ def get_data_disease(features=None, feature_type='gene_expression'):
     return result
 
 
-def get_celltype_abundances(timepoint, dataset='ACZ', kind='qualitative', species='mouse'):
+def get_celltype_abundances(
+        timepoints=None,
+        kind='qualitative',
+        species='mouse'):
     '''Get cell type abundances at a certain time point'''
-    ncells = get_number_cells('celltype_dataset_timepoint')
+    ncells_tp = get_number_cells('celltype_dataset_timepoint')
 
-    idx = ncells.index.str.contains('_'+dataset+'_'+timepoint)
-    ncells_tp = ncells[idx]
+    if timepoints is not None:
+        idx = []
+        for timepoint in timepoints:
+            idx_tp = ncells_tp.index[ncells_tp.index.str.contains('_'+timepoint)]
+            idx.extend(list(idx_tp))
+        ncells_tp = ncells_tp.loc[idx]
 
     ncells_tp.index = [x.split('_')[0] for x in ncells_tp.index]
 
@@ -772,7 +898,9 @@ def get_gsea(genes, species='mouse', gene_set='GO_Biological_Process_2021'):
     '''Get GSEA (gene set enrichment analysis)'''
     import gseapy as gp
 
-    if gene_set == 'KEGG':
+    if gene_set == 'GO':
+        gene_set = 'GO_Biological_Process_2021'
+    elif gene_set == 'KEGG':
         if species == 'mouse':
             gene_set = 'KEGG_2019_Mouse'
         else:
@@ -809,7 +937,7 @@ def get_regions_related_to_gene(gene, relationships, species='mouse'):
         return regions
 
     if 'correlated' in relationships:
-        regions_corr = get_correlated(
+        regions_corr = get_features_correlated(
             [gene],
             feature_type='gene_expression',
             correlates_type='chromatin_accessibility',
@@ -820,14 +948,16 @@ def get_regions_related_to_gene(gene, relationships, species='mouse'):
         if len(relationships) == 0:
             return regions
 
-    gene_annotation = get_gene_annotationd(species).loc[gene]
+    gene_annotation = get_feature_annotationd(
+            'gene_exression', species).loc[gene]
     chrom = gene_annotation['chrom']
 
     # Some genes/pseudogenes are not annotated by Ensembl
     if chrom == '':
         return regions
 
-    region_annotations = get_region_annotationd(species)
+    region_annotations = get_feature_annotationd(
+            'chromatin_accessibility', species)
     tss = gene_annotation['tss']
     strand = gene_annotation['strand']
 
@@ -848,7 +978,7 @@ def get_regions_related_to_gene(gene, relationships, species='mouse'):
 
     for rel in relationships:
         # Gene body
-        if rel == 'gene body': 
+        if rel == 'gene body':
             idx = ((rs < gs) & (re > gs)) | ((rs >= gs) & (rs < ge))
         # Promoter (can be a single peak with exon 1)
         elif rel == 'promoter':
@@ -865,4 +995,3 @@ def get_regions_related_to_gene(gene, relationships, species='mouse'):
             if region not in regions:
                 regions.append(region)
     return regions
-        

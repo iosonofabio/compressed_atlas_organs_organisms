@@ -4,8 +4,6 @@ author:     Fabio Zanini
 date:       22/05/22
 content:    Main flask app for compressed atlases
 '''
-from base64 import decode
-import json
 from flask import (
     Flask,
     send_from_directory,
@@ -21,33 +19,35 @@ import numpy as np
 
 from config import configuration as config
 from api import (
-    measurementByCelltype,
-    measurementOvertime1Feature,
-    measurementOvertime1Celltype,
-    measurementDisease,
-    plotsForSeachGenes,
-    featuresCorrelated,
-    genesInGOTerm,
-    geneExpDifferential,
-    geneExpSpeciesComparison,
-    checkGenenames,
-    markerGenes,
-    celltypeAbundance,
+    MeasurementByCelltype,
+    MeasurementOvertime1Feature,
+    MeasurementOvertime1Celltype,
+    MeasurementCondition,
+    PlotsForSeachGenes,
+    FeaturesCorrelated,
+    FeaturesNearby,
+    GenesInGOTerm,
+    MeasurementDifferential,
+    MeasurementSpeciesComparison,
+    CheckGenenames,
+    MarkerGenes,
+    CelltypeAbundance,
 )
 from models import (
+        get_celltypes,
         get_celltype_abundances,
         get_data_differential,
         get_gene_ids,
-        get_correlated,
+        get_features_correlated,
         get_data_species_comparison,
         get_orthologs,
         get_genes_in_GO_term,
         get_gsea,
         get_kegg_urls,
+        pseudocountd,
 )
 from validation.genes import validate_correct_genestr
 from validation.timepoints import validate_correct_timepoint
-from validation.celltypes import celltypes_validated
 from text_recognition import mod as text_control_blueprint
 
 
@@ -55,7 +55,9 @@ from text_recognition import mod as text_control_blueprint
 # Contextualized templates
 ##############################
 def render_template(*args, **kwargs):
-    kwargs['tissue'] = config['tissue'].capitalize()
+    if 'tissue' not in kwargs:
+        kwargs['tissue'] = config['tissues'][0]
+    kwargs['tissues'] = config['tissues']
     kwargs['feature_types'] = config['feature_types']
     kwargs['condition'] = config['condition'].capitalize()
     kwargs['unit_measurement'] = config['units']['counts']['long']
@@ -89,7 +91,7 @@ def index():
 
 
 # Control pages
-@app.route("/text_control", methods=["GET"])
+@app.route("/start", methods=["GET"])
 def text_control():
     """A single text bar to ask questions or post commands"""
     return render_template(
@@ -97,7 +99,7 @@ def text_control():
         )
 
 
-@app.route("/heatmap_by_celltype", methods=['GET'])
+@app.route("/measurement_by_celltype", methods=['GET'])
 def measurement_by_celltype():
     species = request.args.get('species')
     if species is None:
@@ -131,20 +133,15 @@ def measurement_overtime_1feature():
     species = request.args.get('species')
     if species is None:
         species = config['defaults']['species']
-    genestring = request.args.get("genestring")
-    if genestring is None:
-        genestring = config['defaults']['gene']
-    searchstring = genestring.replace(" ", "")
-
-    similar_genes = get_correlated([searchstring]).split(',')
-    if similar_genes[0] == searchstring:
-        similar_genes = similar_genes[1:]
+    featurestring = request.args.get("featurestring")
+    if featurestring is None:
+        featurestring = config['defaults']['gene']
+    searchstring = featurestring.replace(" ", "")
 
     return render_template(
             "measurement_overtime_1feature.html",
             searchstring=searchstring,
             species=species,
-            similarGenes=similar_genes,
             )
 
 
@@ -161,7 +158,7 @@ def measurement_overtime_1celltype():
         genestring = config['defaults']['genestring']
     searchstring = genestring.replace(" ", "")
 
-    similar_genes = get_correlated(searchstring.split(',')).split(',')
+    similar_genes = get_features_correlated(searchstring.split(',')).split(',')
     # Limit to a few
     similar_genes = similar_genes[:15]
 
@@ -170,108 +167,164 @@ def measurement_overtime_1celltype():
             celltype=celltype,
             searchstring=searchstring,
             species=species,
+            tissue=tissue,
             similarGenes=similar_genes,
             # FIXME: this should depend on the species...
-            celltypes=celltypes_validated,
+            celltypes=get_celltypes('gene_expression', species),
             )
 
 
-@app.route("/measurement_disease", methods=["GET"])
-def measurement_disease():
-    """A sort of heatmap with disease (exercise vs not)"""
-    genestring = request.args.get("genestring")
-    if genestring is None:
-        genestring = config['defaults']['genestring']
-    searchstring = genestring.replace(" ", "")
+@app.route("/measurement_condition", methods=["GET"])
+def measurement_condition():
+    """A sort of heatmap with condition (exercise vs not)"""
+    species = request.args.get('species')
+    if species is None:
+        species = 'mouse'
+
+    featurestring = request.args.get("featurestring")
+    if featurestring is None:
+        featurestring = config['defaults']['genestring']
+    searchstring = featurestring.replace(" ", "")
+
     # Default dataset/timepoints combos
-    dataset_timepoints = config['defaults']['disease']['dataset_timepoint']
+    dataset_timepoints = config['defaults']['condition']['dataset_timepoint']
+
     return render_template(
-            "measurement_disease.html",
+            "measurement_condition.html",
             searchstring=searchstring,
             datasetTimepoints=dataset_timepoints,
+            species=species,
             )
 
 
 # NOTE: This is where API and views break down and react would be better
 @app.route("/heatmap_differential", methods=["GET"])
-def heatmap_differential_genes():
+def heatmap_differential_measurement():
     """A sort of heatmap for differential measurment"""
     from scipy.cluster.hierarchy import linkage, leaves_list
     from scipy.spatial.distance import pdist
 
+    species = request.args.get('species', 'mouse')
+
     rqd = dict(request.args)
     conditions = [
-            {'celltype': rqd['ct1'], 'timepoint': rqd['tp1'],
-             'dataset': rqd['ds1'], 'disease': rqd['dis1']},
-            {'celltype': rqd['ct2'], 'timepoint': rqd['tp2'],
-             'dataset': rqd['ds2'], 'disease': rqd['dis2']},
+            {'celltype': rqd['ct1'],
+             'timepoint': rqd['tp1'],
+             'dataset': rqd['ds1'],
+             'condition': rqd['dis1']},
+            {'celltype': rqd['ct2'],
+             'timepoint': rqd['tp2'],
+             'dataset': rqd['ds2'],
+             'condition': rqd['dis2']},
     ]
-    dfs = get_data_differential(
-            conditions,
-            kind=rqd['kind'],
-            n_genes=int(rqd['n_genes']),
-    )
 
-    # Get hierarchical clustering of cell types and genes
-    # FIXME: this works poorly, trying out HC on the log
-    df = np.log10(dfs[0] + 0.5)
-    new_order = leaves_list(linkage(
-                pdist(df.values),
-                optimal_ordering=True,
-                ))
-    genes_hierarchical = df.index[new_order].tolist()
-    new_order = leaves_list(linkage(
-                pdist(df.values.T),
-                optimal_ordering=True,
-                ))
-    celltypes_hierarchical = df.columns[new_order].tolist()
+    # TODO: adapt to multiple feature types, i.e. feature_type="all"
+    feature_type = rqd['feature_type']
+    if feature_type == 'all':
+        feature_types = config['feature_types']
+    else:
+         feature_types = [feature_type]
 
-    # Gene hyperlinks
-    gene_ids = get_gene_ids(df.index)
-
-    # Inject dfs into template
-    heatmap_data = {
+    plot_data = {
         'comparison': rqd['comparison'],
-        'data': dfs[0].T.to_dict(),
-        'data_baseline': dfs[1].T.to_dict(),
         'celltype': conditions[0]['celltype'],
         'celltype_baseline': conditions[1]['celltype'],
         'dataset': conditions[0]['dataset'],
         'dataset_baseline': conditions[1]['dataset'],
         'timepoint': conditions[0]['timepoint'],
         'timepoint_baseline': conditions[1]['timepoint'],
-        'disease': conditions[0]['disease'],
-        'disease_baseline': conditions[1]['disease'],
-        'genes': dfs[0].index.tolist(),
-        'celltypes': dfs[0].columns.tolist(),
-        'genes_hierarchical': genes_hierarchical,
-        'celltypes_hierarchical': celltypes_hierarchical,
-        'gene_ids': gene_ids,
+        'condition': conditions[0]['condition'],
+        'condition_baseline': conditions[1]['condition'],
+        'data': [],
+        'data_baseline': [],
+        'features': [],
+        'features_hierarchical': [],
+        'gene_ids': [],
+        'feature_type': [],
     }
 
+    for feature_type in feature_types:
+        dfs = get_data_differential(
+                conditions,
+                kind=rqd['kind'],
+                n_features=int(rqd['n_features']),
+                feature_type=feature_type,
+        )
+
+        # Get hierarchical clustering of cell types and features
+        # FIXME: this works poorly, trying out HC on the log
+        df = np.log10(dfs[0] + pseudocountd[feature_type])
+        new_order = leaves_list(linkage(
+                    pdist(df.values),
+                    optimal_ordering=True,
+                    ))
+        features_hierarchical = df.index[new_order].tolist()
+        new_order = leaves_list(linkage(
+                    pdist(df.values.T),
+                    optimal_ordering=True,
+                    ))
+        celltypes_hierarchical = df.columns[new_order].tolist()
+
+        # Gene hyperlinks
+        if feature_type == 'gene_expression':
+            gene_ids = get_gene_ids(df.index, species)
+        else:
+            gene_ids = []
+
+        # NOTE: Inject dfs into template!! (why?)
+        # FIXME: enable multiple feature types
+        plot_data['data'].append(dfs[0].T.to_dict())
+        plot_data['data_baseline'].append(dfs[1].T.to_dict())
+        plot_data['features'].append(dfs[0].index.tolist())
+        plot_data['celltypes'] = dfs[0].columns.tolist()
+        plot_data['features_hierarchical'].append(features_hierarchical)
+        plot_data['celltypes_hierarchical'] = celltypes_hierarchical
+        plot_data['gene_ids'].append(gene_ids)
+        plot_data['feature_type'].append(feature_type)
+
     # Set search string
-    searchstring = ','.join(dfs[0].index)
+    searchstring = ','.join(sum(plot_data['features'], []))
+
     return render_template(
-            "measurment_differential.html",
+            "measurement_differential.html",
             searchstring=searchstring,
-            heatmapData=heatmap_data,
+            plotData=plot_data,
             )
 
 
+@app.route("/list_celltypes/", methods=["GET"])
 @app.route("/list_celltypes/<timepoint>", methods=["GET"])
-def list_celltypes_timepoint(timepoint):
+def list_celltypes_timepoint(timepoint='', species="mouse"):
     '''List cell types and their abundances'''
-    timepoint = validate_correct_timepoint(timepoint)
+    other_timepoints = ['Overall'] + config['order']['timepoint'][species]
+    celltypes = list(get_celltypes('gene_expression', species=species, tissue=tissue))
 
-    celltype_dict = get_celltype_abundances(
-            timepoint,
-            kind='qualitative',
-            )
+    if timepoint != '':
+        timepoint = validate_correct_timepoint(timepoint)
+        celltype_abundance = get_celltype_abundances(
+                [timepoint],
+                kind='quantitative',
+                )
+        celltypes_sorted = list(celltype_abundance.sort_values(ascending=False).index)
+        celltype_abundance = celltype_abundance.to_dict()
+        other_timepoints = [x for x in other_timepoints if x != timepoint]
+    else:
+        other_timepoints = [x for x in other_timepoints if x != 'Overall']
+        celltypes_sorted = []
+        celltype_abundance = ''
+
     return render_template(
             'list_celltypes.html',
             timepoint=timepoint,
-            celltypes=celltype_dict,
+            other_timepoints=other_timepoints,
+            plotData={
+                'celltype_abundance': celltype_abundance,
+                'celltypes': celltypes,
+                'celltypes_sorted': celltypes_sorted,
+            },
+            kind='quantitative',
             searchstring=timepoint,
+            searchvalue="Timepoint",
             )
 
 
@@ -300,13 +353,10 @@ def plot_barplot_GSEA():
 
     genestring = args.get('genes')
     species = args.get('species')
-    gene_set = args.get('gene_set')
+    gene_set = args.get('gene_set', 'GO')
 
     genes = validate_correct_genestr(genestring, species=species).split(',')
-    if gene_set is None:
-        data = get_gsea(genes, species)
-    else:
-        data = get_gsea(genes, species, gene_set=gene_set)
+    data = get_gsea(genes, species, gene_set=gene_set)
 
     if 'KEGG' in gene_set:
         pathway_urls = get_kegg_urls(data.index)
@@ -423,19 +473,20 @@ app.register_blueprint(text_control_blueprint)
 
 
 # API endpoints
-app_api.add_resource(measurementByCelltype, "/data/by_celltype")
-app_api.add_resource(measurementOvertime1Feature, "/data/overtime_1feature")
-app_api.add_resource(measurementOvertime1Celltype, "/data/overtime_1celltype")
-app_api.add_resource(measurementDisease, "/data/disease")
-app_api.add_resource(featuresCorrelated, "/data/features_correlated")
-app_api.add_resource(genesInGOTerm, "/data/genes_in_go_term")
-app_api.add_resource(geneExpDifferential, "/data/differential")
-app_api.add_resource(geneExpSpeciesComparison, "/data/speciescomparison")
-app_api.add_resource(checkGenenames, "/check_genenames")
-app_api.add_resource(markerGenes, "/data/marker_genes")
-app_api.add_resource(celltypeAbundance, "/data/celltype_abundance")
+app_api.add_resource(MeasurementByCelltype, "/data/by_celltype")
+app_api.add_resource(MeasurementOvertime1Feature, "/data/overtime_1feature")
+app_api.add_resource(MeasurementOvertime1Celltype, "/data/overtime_1celltype")
+app_api.add_resource(MeasurementCondition, "/data/condition")
+app_api.add_resource(FeaturesCorrelated, "/data/features_correlated")
+app_api.add_resource(FeaturesNearby, "/data/features_nearby")
+app_api.add_resource(GenesInGOTerm, "/data/genes_in_go_term")
+app_api.add_resource(MeasurementDifferential, "/data/differential")
+app_api.add_resource(MeasurementSpeciesComparison, "/data/speciescomparison")
+app_api.add_resource(CheckGenenames, "/check_genenames")
+app_api.add_resource(MarkerGenes, "/data/marker_genes")
+app_api.add_resource(CelltypeAbundance, "/data/celltype_abundance")
 # FIXME: this should not be a separate API endpoint
-app_api.add_resource(plotsForSeachGenes, "/data/by_celltype_2_genes")
+app_api.add_resource(PlotsForSeachGenes, "/data/by_celltype_2_genes")
 
 
 # Main loop

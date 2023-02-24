@@ -4,12 +4,6 @@ author:     Fabio Zanini
 date:       23/04/22
 content:    Interpret text from Google TTS into a redirect URL.
 '''
-import numpy as np
-import pandas as pd
-
-from models import (
-    celltypes as celltypes_all,
-    )
 from validation.genes import validate_correct_genestr
 from validation.regions import (
     validate_correct_single_region,

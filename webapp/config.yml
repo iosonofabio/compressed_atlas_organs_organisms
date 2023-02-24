@@ -5,7 +5,7 @@ paths:
   compressed_atlas:
     "mouse": "./static/atlas_data/tabula_muris_senis.h5"
     "human": "./static/atlas_data/tabula_sapiens.h5"
-    "lemur": "./static/atlas_data/tabula_microcebus.h5"
+      #"lemur": "./static/atlas_data/tabula_microcebus.h5"
 
   # NOTE: this one is used for all species, depending on the column
   gene_ids: "./static/atlas_data/mouse_gene_names.tsv"

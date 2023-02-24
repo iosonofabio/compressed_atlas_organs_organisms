@@ -4,40 +4,131 @@ author:     Fabio Zanini
 date:       23/04/22
 content:    Interpret text from Google TTS into a redirect URL.
 '''
-import numpy as np
-import pandas as pd
-from flask import url_for
 from urllib.parse import urlencode
+from flask import url_for
 
-from models import get_marker_features, get_de_url
-
+from models import (
+        get_features_nearby,
+        get_marker_features,
+        get_differential_url,
+        )
 
 
 command_dict = {
     'expression_by_celltype': {
-        'url_func': lambda sfx: url_for('measurement_by_celltype')+'?featurestring='+sfx,
+        'url_func': lambda sfx: url_for(
+            'measurement_by_celltype')+'?featurestring='+sfx,
     },
     'accessibility_by_celltype': {
-        'url_func': lambda sfx: url_for('measurement_by_celltype')+'?featurestring='+sfx,
+        'url_func': lambda sfx: url_for(
+            'measurement_by_celltype')+'?featurestring='+sfx,
     },
     'expression_overtime_1feature': {
-        'url_func': lambda sfx: url_for('expression_overtime_1feature')+'?featurestring='+sfx,
+        'url_func': lambda sfx: url_for(
+            'measurement_overtime_1feature')+'?featurestring='+sfx,
+    },
+    'accessibility_overtime_1feature': {
+        'url_func': lambda sfx: url_for(
+            'measurement_overtime_1feature')+'?featurestring='+sfx,
     },
     'gene_friends': {
         'url_func': 'TODO',  # TODO
     },
+    'nearby_regions': {
+        'url_func': lambda sfx, distance=0: url_for('measurement_by_celltype') + '?' + \
+                'featurestring='+get_features_nearby(
+                    sfx,
+                    target_types=['chromatin_accessibility'],
+                    dmax=distance,
+                    include_query=True,
+                    ),
+    },
+    'nearby_genes': {
+        'url_func': lambda sfx, distance=0: url_for('measurement_by_celltype') + '?' + \
+                'featurestring='+get_features_nearby(
+                    sfx,
+                    target_types=['gene_expression'],
+                    dmax=distance,
+                    include_query=True,
+                    ),
+    },
+    'nearby_features': {
+        'url_func': lambda sfx, distance=0: url_for('measurement_by_celltype') + '?' + \
+                'featurestring='+get_features_nearby(
+                    sfx,
+                    target_types=['chromatin_accessibility', 'gene_expression'],
+                    dmax=distance,
+                    include_query=True,
+                    ),
+    },
     'marker_genes': {
-        'url_func': lambda sfx: url_for('measurement_by_celltype') + '?' + \
-                'genestring='+get_marker_features(sfx),
+        'url_func': lambda sfx, number=10: url_for('measurement_by_celltype') + '?' + \
+                'featurestring='+get_marker_features(
+                    sfx,
+                    feature_type="gene_expression",
+                    ntop=number,
+                    ),
+    },
+    'marker_regions': {
+        'url_func': lambda sfx, number=10: url_for('measurement_by_celltype') + '?' + \
+                'featurestring='+get_marker_features(
+                    sfx,
+                    feature_type="chromatin_accessibility",
+                    ntop=number,
+                    ),
     },
     'differentially_expressed_genes': {
-        'url_func': lambda sfx: url_for('heatmap_differential_genes')+"?"+get_de_url(sfx, kind='both')
+        'url_func': lambda sfx, number=20: url_for(
+            'heatmap_differential_measurement')+"?"+get_differential_url(
+                sfx, feature_type='gene_expression', kind='both',
+                n_features=number)
+    },
+    'differentially_accessible_regions': {
+        'url_func': lambda sfx, number=20: url_for(
+            'heatmap_differential_measurement')+"?"+get_differential_url(
+                sfx, feature_type='chromatin_accessibility', kind='both',
+                n_features=number)
+    },
+    'differentially_measured_features': {
+        'url_func': lambda sfx, number=20: url_for(
+            'heatmap_differential_measurement')+"?"+get_differential_url(
+                sfx, feature_type='all', kind='both', n_features=number)
     },
     'upregulated_genes': {
-        'url_func': lambda sfx: url_for('heatmap_differential_genes')+"?"+get_de_url(sfx, kind='up')
+        'url_func': lambda sfx, number=10: url_for(
+            'heatmap_differential_measurement')+"?"+get_differential_url(
+                sfx, feature_type='gene_expression', kind='up',
+                n_features=number)
+    },
+    'upregulated_regions': {
+        'url_func': lambda sfx, number=10: url_for(
+            'heatmap_differential_measurement')+"?"+get_differential_url(
+                sfx, feature_type='chromatin_accessibility', kind='up',
+                n_features=number)
+    },
+    'upregulated_features': {
+        'url_func': lambda sfx, number=10: url_for(
+            'heatmap_differential_measurement')+"?"+get_differential_url(
+                sfx, feature_type='all', kind='up',
+                n_features=number)
     },
     'downregulated_genes': {
-        'url_func': lambda sfx: url_for('heatmap_differential_genes')+"?"+get_de_url(sfx, kind='down')
+        'url_func': lambda sfx, number=10: url_for(
+            'heatmap_differential_measurement')+"?"+get_differential_url(
+                sfx, feature_type='gene_expression', kind='down',
+                n_features=number)
+    },
+    'downregulated_regions': {
+        'url_func': lambda sfx, number=10: url_for(
+            'heatmap_differential_measurement')+"?"+get_differential_url(
+                sfx, feature_type='chromatin_accessibility', kind='down',
+                n_features=number)
+    },
+    'downregulated_features': {
+        'url_func': lambda sfx, number=10: url_for(
+            'heatmap_differential_measurement')+"?"+get_differential_url(
+                sfx, feature_type='all', kind='down',
+                n_features=number)
     },
     'list_cell_types': {
         'url_func': lambda sfx: url_for(
@@ -57,6 +148,7 @@ command_dict = {
 
 
 def add_species_to_url(url, species):
+    '''Add organismal species to url if needed'''
     # Mouse is still the default
     if species == 'mouse':
         return url
@@ -86,7 +178,18 @@ def get_command_response(text_dict):
             'url_prefix': command_dict[category]['url_func'](''),
         }
 
-    url = command_dict[category]['url_func'](suffix_corrected)
+    # Some categories benefit from optional additional parameters, e.g. the
+    # number of DEGs, the distance from a gene
+    kwargs = {}
+    if ('marker' in category) or ('differential' in category):
+        if 'number' in text_dict['prefix_parameters']:
+            kwargs['number'] = text_dict['prefix_parameters']['number']
+
+    if 'nearby' in category:
+        kwargs['distance'] = text_dict['prefix_parameters'].get('distance', 50000)
+
+    url = command_dict[category]['url_func'](suffix_corrected, **kwargs)
+
     if 'species=' not in url:
         url = add_species_to_url(url, text_dict['species'])
 
@@ -94,4 +197,3 @@ def get_command_response(text_dict):
         'outcome': 'success',
         'url': url,
     }
-

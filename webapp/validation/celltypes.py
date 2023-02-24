@@ -7,9 +7,9 @@ content:    Some quirks of the celltypes in the data.
 import numpy as np
 from config import configuration as config
 
-from models.basics import (
-    read_tissues,
-    read_cell_types,
+from models.lazy import (
+    get_tissues,
+    get_celltypes,
 )
 
 
@@ -23,10 +23,10 @@ def validate_correct_celltypestr(
     celltypes = celltypestr.strip(' ').replace('.', ',').replace(';', ',').split(',')
     
     celltypesv = {}
-    tissues = read_tissues(species=species)
+    tissues = get_tissues('gene_expression', species=species)
     for tissue in tissues:
-        celltypes_tissue = read_cell_types(
-                tissue, species=species,
+        celltypes_tissue = get_celltypes(
+                'gene_expression', tissue=tissue, species=species,
             )
 
         for celltype in celltypes:
