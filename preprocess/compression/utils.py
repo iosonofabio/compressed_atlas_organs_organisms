@@ -2,8 +2,10 @@
 Utility functions for the compression
 '''
 import os
+import gzip
 import numpy as np
 import pandas as pd
+import h5py
 
 import scanpy as sc
 
@@ -45,6 +47,26 @@ def subannotate(adata, species, annotation, verbose=True):
     '''
 
     markers = {
+        ('human', 'immune cell'): {
+            'T': ['CD3D', 'CD3G', 'CD3E', 'TRAC', 'IL7R'],
+            'B': ['MS4A1', 'CD19', 'CD79A'],
+            'NK': ['PFN1', 'TMSB4XP8'],
+            'macrophage': ['MRC1', 'MARCO', 'CD163', 'C1QA', 'C1QB', 'CST3'],
+            'dendritic': ['FCER1A', 'IL1R2', 'CD86', 'HLA-DPB1', 'HLA-DRB1'],
+            'neutrophil': ['S100A8', 'S100A7'],
+        },
+        ('human', 'endothelial'): {
+            'arterial': ['GJA5', 'BMX', 'SEMA3G', 'VIM'],
+            'venous': ['VWF', 'MMRN2', 'CLEC14A', 'ACKR1'],
+            'lymphatic': ['LYVE1', 'PROX1', 'THY1', 'MMRN1', 'TFF3', 'TFPI'],
+            'capillary': ['SLC9A3R2', 'PLPP1', 'PECAM1', 'IGKC', 'CALD1', 'CRHBP', 'KDR'],
+            'epithelial': ['COBLL1', 'EPCAM', 'CD24'],
+            '': [
+                'JUN', 'JUND', 'SQSTM1', 'SELENOH', 'FOS', 'ACP1', 'EPB41L2',
+                'MALAT1', 'CAP1', 'FABP5P7', 'XIST', 'TGFBR2', 'SPARCL1',
+                'FCN3', 'F8'],
+            'acinar': ['PRSS2', 'ENPP2', 'GALNT15', 'APOD', 'CLPS'],
+        },
         ('mouse', 'endothelial cell'): {
             'arterial': ['Gja5', 'Bmx'],
             'venous': ['Slc6a2', 'Vwf'],
@@ -79,6 +101,13 @@ def subannotate(adata, species, annotation, verbose=True):
             'monocyte': ['Psap', 'Cd14'],
             'neutrophil': ['S100a8', 'S100a9', 'Stfa1', 'Stfa2'],
         },
+    }
+
+    bad_prefixes = {
+        'mouse': ['Rpl', 'Rps', 'Linc', 'Mt'],
+        'human': ['RPL', 'RPS', 'LINC', 'MT', 'EPAS1', 'DYNLL1',
+                  'EIF3G', 'HLA-A', 'HLA-B', 'HLA-C', 'HLA-E',
+                  'GZMA', 'GNLY', 'CD74', 'KRT4', 'TYROBP'],
     }
 
     markersi = markers.get((species, annotation), None)
@@ -118,7 +147,12 @@ def subannotate(adata, species, annotation, verbose=True):
         for gene in genestop:
             if found:
                 break
-            if gene.startswith('Rps') or gene.startswith('Rpl'):
+            found_bad_prefix = False
+            for bad_pfx in bad_prefixes[species]:
+                if gene.startswith(bad_pfx):
+                    found_bad_prefix = True
+                    break
+            if found_bad_prefix:
                 subannos[cluster] = ''
                 continue
             for celltype, markers_ct in markersi.items():
@@ -137,7 +171,7 @@ def subannotate(adata, species, annotation, verbose=True):
     return new_annotations
 
 
-def correct_celltypes(adata, column, species):
+def fix_annotations(adata, column, species, rename_dict, coarse_cell_types):
     '''Correct cell types in each tissue according to known dict'''
     celltypes_new = np.asarray(adata.obs[column]).copy()
 
@@ -154,7 +188,7 @@ def correct_celltypes(adata, column, species):
             idx = celltypes_new == celltype
             adata_coarse_type = adata[idx]
             subannotations = subannotate(
-                adata_coarse_type, 'mouse', celltype)
+                adata_coarse_type, species, celltype)
 
             # Ignore reclustering into already existing types, we have enough
             for subanno in subannotations:
@@ -184,3 +218,121 @@ def get_celltype_order(celltypes_unordered, celltype_order):
         raise IndexError("Missing cell types!")
 
     return celltypes_ordered
+
+
+def collect_gene_annotations(anno_fn, genes):
+    '''Collect gene annotations from GTF file'''
+    with gzip.open(anno_fn, 'rt') as gtf:
+        gene_annos = []
+        for line in gtf:
+            if '\ttranscript\t' not in line:
+                continue
+            fields = line.split('\t')
+            if fields[2] != 'transcript':
+                continue
+            attrs = fields[-1].split(';')
+            gene_name = None
+            transcript_id = None
+            for attr in attrs:
+                if 'gene_name' in attr:
+                    gene_name = attr.split(' ')[-1][1:-1]
+                elif 'transcript_id' in attr:
+                    transcript_id = attr.split(' ')[-1][1:-1]
+            if (gene_name is None) or (transcript_id is None):
+                continue
+            gene_annos.append({
+                'transcript_id': transcript_id,
+                'gene_name': gene_name,
+                'chromosome_name': fields[0],
+                'start_position': int(fields[3]),
+                'end_position': int(fields[4]),
+                'strand': 1 if fields[6] == '+' else -1,
+                'transcription_start_site': int(fields[3]) if fields[6] == '+' else int(fields[4]),
+                })
+    gene_annos = pd.DataFrame(gene_annos)
+
+    assert gene_annos['transcript_id'].value_counts()[0] == 1
+
+    # FIXME: choose the largest transcript or something. For this particular
+    # repo it's not that important
+    gene_annos = (gene_annos.drop_duplicates('gene_name')
+                            .set_index('gene_name', drop=False))
+
+    genes_missing = list(set(genes) - set(gene_annos['gene_name'].values))
+    gene_annos_miss = pd.DataFrame([], index=genes_missing)
+    gene_annos_miss['transcript_id'] = gene_annos_miss.index
+    gene_annos_miss['start_position'] = -1
+    gene_annos_miss['end_position'] = -1
+    gene_annos_miss['strand'] = 0
+    gene_annos_miss['chromosome_name'] = ''
+    gene_annos_miss['transcription_start_site'] = -1
+    gene_annos = pd.concat([gene_annos, gene_annos_miss])
+    gene_annos = gene_annos.loc[genes]
+    gene_annos['strand'] = gene_annos['strand'].astype('i2')
+
+    return gene_annos
+
+
+def store_compressed_atlas(
+        fn_out,
+        compressed_atlas,
+        tissues,
+        gene_annos,
+        celltype_order,
+        ):
+    '''Store compressed atlas into h5 file'''
+    genes = gene_annos.index.tolist()
+
+    with h5py.File(fn_out, 'a') as h5_data:
+        ge = h5_data.create_group('gene_expression')
+        ge.create_dataset('features', data=np.array(genes).astype('S'))
+
+        group = ge.create_group('feature_annotations')
+        group.create_dataset(
+                'gene_name', data=gene_annos.index.values.astype('S'))
+        group.create_dataset(
+                'transcription_start_site',
+                data=gene_annos['transcription_start_site'].values, dtype='i8')
+        group.create_dataset(
+                'chromosome_name',
+                data=gene_annos['chromosome_name'].astype('S'))
+        group.create_dataset(
+                'start_position',
+                data=gene_annos['start_position'].values, dtype='i8')
+        group.create_dataset(
+                'end_position',
+                data=gene_annos['end_position'].values, dtype='i8')
+        group.create_dataset(
+                'strand', data=gene_annos['strand'].values, dtype='i2')
+
+        ge.create_dataset('tissues', data=np.array(tissues).astype('S'))
+
+        supergroup = ge.create_group('by_tissue')
+        for tissue in tissues:
+            tgroup = supergroup.create_group(tissue)
+            for label in ['celltype', 'celltype_dataset_timepoint']:
+                avg_ge = compressed_atlas[tissue][label]['avg']
+                frac_ge = compressed_atlas[tissue][label]['frac']
+                ncells_ge = compressed_atlas[tissue][label]['ncells']
+
+                group = tgroup.create_group(label)
+                group.create_dataset(
+                        'index', data=avg_ge.columns.values.astype('S'))
+                group.create_dataset(
+                        'average', data=avg_ge.T.values, dtype='f4')
+                group.create_dataset(
+                        'fraction', data=frac_ge.T.values, dtype='f4')
+                group.create_dataset(
+                        'cell_count', data=ncells_ge.values, dtype='i8')
+
+        ct_group = ge.create_group('celltypes')
+        supertypes = np.array([x[0] for x in celltype_order])
+        ct_group.create_dataset(
+                'supertypes',
+                data=supertypes.astype('S'),
+                )
+        for supertype, subtypes in celltype_order:
+            ct_group.create_dataset(
+                supertype,
+                data=np.array(subtypes).astype('S'),
+            )
