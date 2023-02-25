@@ -25,13 +25,14 @@
       </a>
     </div>
     <div class="navbar-start">
+      {% block navbarTissues %}
       <div class="navbar-item has-dropdown is-hoverable">
         <a href="/" class="button is-ghost navbar-link">
           <i id="homeButton" class="fa-solid fa-heart-pulse"></i>
         </a>
         <div class="navbar-dropdown">
           {% for tiss in tissues %}
-          <a href="/{{tiss}}" class="button is-ghost navbar-item">
+          <a href="{{ url_for('measurement_by_celltype') }}?tissue={{tiss | safe }}" class="button is-ghost navbar-item">
             <span>
               {% if tiss == "Heart" %}
               <i class="fa-solid fa-heart-pulse"></i>
@@ -45,6 +46,7 @@
           {% endfor %}
         </div>
       </div>
+      {% endblock %}
       <a href="{{ url_for('measurement_by_celltype') }}" class="button is-ghost has-text-info">
          By cell type
       </a>
