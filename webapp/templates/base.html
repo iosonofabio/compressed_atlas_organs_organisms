@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Compressed Atlas of the Heart</title>
+    <title>Compressed Atlas</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.3/css/bulma.min.css">
 
     <link rel="stylesheet" href="/css/bulma-tooltip.min.css">
@@ -20,14 +20,31 @@
   <!-- Navigation Bar -->
   <nav class="navbar is-fixed-top has-shadow is-spaced is-light">
     <div class="navbar-brand">
-      <a class="navbar-item">
-        <h1 class="title is-5">Compressed Atlas of the {{tissue}}</h1>
+      <a href="/" class="navbar-item">
+        <h1 class="title is-5">Compressed Atlas</h1>
       </a>
     </div>
     <div class="navbar-start">
-      <a href="/" class="button is-ghost">
-        <i id="homeButton" class="fa-solid fa-heart-pulse"></i>
-      </a>
+      <div class="navbar-item has-dropdown is-hoverable">
+        <a href="/" class="button is-ghost navbar-link">
+          <i id="homeButton" class="fa-solid fa-heart-pulse"></i>
+        </a>
+        <div class="navbar-dropdown">
+          {% for tiss in tissues %}
+          <a href="/{{tiss}}" class="button is-ghost navbar-item">
+            <span>
+              {% if tiss == "Heart" %}
+              <i class="fa-solid fa-heart-pulse"></i>
+              {{ tiss }}
+              {% else %}
+              <img src="/static/images/tissue_icons/{{ tiss }}.svg">
+              {{ tiss }}
+              {% endif %}
+            </span>
+          </a>
+          {% endfor %}
+        </div>
+      </div>
       <a href="{{ url_for('measurement_by_celltype') }}" class="button is-ghost has-text-info">
          By cell type
       </a>
@@ -37,9 +54,11 @@
       <a href="{{ url_for('measurement_overtime_1celltype') }}" class="button is-ghost has-text-info">
           Over time (1 cell type)
       </a>
-      <a href="{{ url_for('measurement_disease') }}" class="button is-ghost has-text-info">
+      <!--
+      <a href="{{ url_for('measurement_condition') }}" class="button is-ghost has-text-info">
         {{condition}}
       </a>
+      -->
   </div>
 
   {% block navbarend %}
@@ -66,6 +85,7 @@
 
   <script>
     let species = "{{ species | safe }}";
+    let tissue = "{{ tissue | safe }}";
 
     // Add remove loading class on body element based on Ajax request status
     $(document).on({
@@ -77,7 +97,6 @@
         }    
     });
   </script>
-
 
   </body>
 </html>

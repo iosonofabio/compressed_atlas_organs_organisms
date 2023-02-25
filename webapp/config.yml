@@ -26,6 +26,7 @@ pathways:
 
 
 defaults:
+  tissue: "Lung"
   species: "mouse"
   celltype: "Vent"
   gene: "Actb"

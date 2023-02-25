@@ -24,7 +24,7 @@ def read_tissues(
     '''Read list of tissues from the atlas file for a species and modality'''
     fn_atlas = fn_atlasd[species]
     with h5py.File(fn_atlas, "r") as h5_data:
-        tissues = np.array(h5_data[feature_type]['tissues'])
+        tissues = np.array(h5_data[feature_type]['tissues'].asstr())
     return tissues
 
 

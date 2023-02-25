@@ -34,6 +34,7 @@ from api import (
     CelltypeAbundance,
 )
 from models import (
+        get_tissues,
         get_celltypes,
         get_celltype_abundances,
         get_data_differential,
@@ -55,11 +56,12 @@ from text_recognition import mod as text_control_blueprint
 # Contextualized templates
 ##############################
 def render_template(*args, **kwargs):
-    if 'tissue' not in kwargs:
-        kwargs['tissue'] = config['tissues'][0]
-    kwargs['tissues'] = config['tissues']
+    kwargs['species'] = kwargs.get('species', config['defaults']['species'])
+    kwargs['tissue'] = kwargs.get('tissue', config['defaults']['tissue'])
+    kwargs['tissues'] = get_tissues(
+            'gene_expression', kwargs['species'])
     kwargs['feature_types'] = config['feature_types']
-    kwargs['condition'] = config['condition'].capitalize()
+    #kwargs['condition'] = config['condition'].capitalize()
     kwargs['unit_measurement'] = config['units']['counts']['long']
     kwargs['available_species'] = list(config['paths']['compressed_atlas'].keys())
     if 'short' in config['units']['counts']:
@@ -149,7 +151,10 @@ def measurement_overtime_1feature():
 def measurement_overtime_1celltype():
     species = request.args.get('species')
     if species is None:
-        species = 'mouse'
+        species = config['defaults']['species']
+    tissue = request.args.get('tissue')
+    if tissue is None:
+        tissue = config['defaults']['tissue']
     celltype = request.args.get("celltype")
     if celltype is None:
         celltype = config['defaults']['celltype']
