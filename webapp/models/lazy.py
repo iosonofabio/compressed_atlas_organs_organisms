@@ -9,12 +9,23 @@ feature_types = config['feature_types']
 
 # A bunch of lazy data that can be read from file only when needed
 data_lazy = {
+    'speciess': None,
     'tissuesd': None,
     'celltypesd': None,
     'feature_orderd': None,
     'feature_annotationd': None,
     'gene_matrixd': None,
 }
+
+
+def read_speciess():
+    '''Read list of species'''
+    return list(fn_atlasd.keys())
+
+
+def load_speciess():
+    '''Preload species'''
+    data_lazy['speciess'] = read_speciess()
 
 
 def read_tissues(
@@ -179,6 +190,13 @@ def load_gene_matrixd():
 #####################################
 # Getters
 #####################################
+def get_speciess():
+    '''Return cached species'''
+    if data_lazy['speciess'] is None:
+        load_speciess()
+    return data_lazy['speciess']
+
+
 def get_tissues(feature_type, species):
     '''Return cached tissues'''
     if data_lazy['tissuesd'] is None:

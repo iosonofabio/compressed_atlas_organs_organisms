@@ -34,6 +34,7 @@ from api import (
     CelltypeAbundance,
 )
 from models import (
+        get_speciess,
         get_tissues,
         get_celltypes,
         get_celltype_abundances,
@@ -57,6 +58,7 @@ from text_recognition import mod as text_control_blueprint
 ##############################
 def render_template(*args, **kwargs):
     kwargs['species'] = kwargs.get('species', config['defaults']['species'])
+    kwargs['speciess'] = get_speciess()
     kwargs['tissue'] = kwargs.get('tissue', config['defaults']['tissue'])
     kwargs['tissues'] = get_tissues(
             'gene_expression', kwargs['species'])
@@ -105,7 +107,10 @@ def text_control():
 def measurement_by_celltype():
     species = request.args.get('species')
     if species is None:
-        species = 'mouse'
+        species = config['defaults']['species']
+    tissue = request.args.get('tissue')
+    if tissue is None:
+        tissue = config['defaults']['tissue']
     featurestring = request.args.get("featurestring")
     if featurestring is None:
         pathway = request.args.get("pathway")
@@ -127,6 +132,7 @@ def measurement_by_celltype():
             "measurement_by_celltype.html",
             searchstring=searchstring,
             species=species,
+            tissue=tissue,
             )
 
 

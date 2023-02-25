@@ -484,6 +484,7 @@ function AssembleAjaxRequest( featurestring = "" ) {
     let requestData = {
         feature_names: featureNames,
         species: species,
+        tissue: tissue,
     }
     // HTML GET method length is capped at 4,000, but search box might be shorter
     let htmlVerb = (featureNames.length > 500) ? 'POST' : 'GET';

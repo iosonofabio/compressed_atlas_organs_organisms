@@ -12,6 +12,7 @@ from validation.celltypes import (
         )
 from validation.differential_measurement import get_differential_conditions
 from models.lazy import (
+        get_speciess,
         get_tissues,
         get_celltypes,
         get_feature_orderd,
@@ -34,6 +35,7 @@ def get_counts(
         df_type,
         features=None,
         species='mouse',
+        tissue='Lung',
         missing='throw',
         key="average",
         feature_type='gene_expression',
@@ -53,10 +55,10 @@ def get_counts(
 
     fn_atlas = fn_atlasd[species]
     with h5py.File(fn_atlas, "r") as h5_data:
-        columns = h5_data[feature_type][df_type]['index'].asstr()[:]
+        columns = h5_data[feature_type]['by_tissue'][tissue][df_type]['index'].asstr()[:]
 
         # Lazy structure, for speed
-        counts = h5_data[feature_type][df_type][key]
+        counts = h5_data[feature_type]['by_tissue'][tissue][df_type][key]
         if features is not None:
             index = []
             for gene in features:

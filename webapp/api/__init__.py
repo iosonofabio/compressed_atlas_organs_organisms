@@ -58,6 +58,7 @@ class MeasurementByCelltype(Resource):
         if args is None:
             args = request.args
         species = args.get("species")
+        tissue = args.get("tissue")
         featurestring = args.get("feature_names")
 
         # A cap on gene names to avoid overload is reasonable
@@ -108,6 +109,7 @@ class MeasurementByCelltype(Resource):
                         feature_type=feature_type,
                         features=feature_names,
                         species=species,
+                        tissue=tissue,
                         missing=missing_genes,
                         )
                 if feature_type == 'gene_expression':
@@ -117,10 +119,12 @@ class MeasurementByCelltype(Resource):
                             features=feature_names,
                             key='fraction',
                             species=species,
+                            tissue=tissue,
                             missing=missing_genes,
                             )
 
             except KeyError:
+                print("Could not get counts from h5 file")
                 return None
 
             # Just in case we skipped some
@@ -192,6 +196,7 @@ class MeasurementByCelltype(Resource):
         result['celltypes'] = df.columns.tolist()
         result['celltypes_hierarchical'] = idx_ct_hierarchical
         result['species'] = species
+        result['tissue'] = tissue
 
         return result
 

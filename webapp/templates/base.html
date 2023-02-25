@@ -25,14 +25,15 @@
       </a>
     </div>
     <div class="navbar-start">
-      {% block navbarTissues %}
+      {% block navbarTissuesSpecies %}
+      <!-- TISSUES DROPDOWN -->
       <div class="navbar-item has-dropdown is-hoverable">
-        <a href="/" class="button is-ghost navbar-link">
+        <a class="button is-ghost navbar-link">
           <i id="homeButton" class="fa-solid fa-heart-pulse"></i>
         </a>
         <div class="navbar-dropdown">
           {% for tiss in tissues %}
-          <a href="{{ url_for('measurement_by_celltype') }}?tissue={{tiss | safe }}" class="button is-ghost navbar-item">
+          <a href="{{ url_for('measurement_by_celltype') }}?tissue={{ tiss | safe }}&species={{ species }}" class="button is-ghost navbar-item">
             <span>
               {% if tiss == "Heart" %}
               <i class="fa-solid fa-heart-pulse"></i>
@@ -46,6 +47,23 @@
           {% endfor %}
         </div>
       </div>
+      <!-- SPECIES DROPDOWN -->
+      <div class="navbar-item has-dropdown is-hoverable">
+        <a class="button is-ghost navbar-link">
+          <img src="/static/images/species_icons/{{ species }}.svg">
+        </a>
+        <div class="navbar-dropdown">
+          {% for spec in speciess %}
+          <a href="{{ url_for('measurement_by_celltype') }}?tissue={{ tissue | safe }}&species={{ spec | safe }}" class="button is-ghost navbar-item">
+            <span>
+              <img src="/static/images/species_icons/{{ spec }}.svg">
+              {{ spec }}
+            </span>
+          </a>
+          {% endfor %}
+        </div>
+      </div>
+
       {% endblock %}
       <a href="{{ url_for('measurement_by_celltype') }}" class="button is-ghost has-text-info">
          By cell type
