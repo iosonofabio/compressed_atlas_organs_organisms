@@ -526,6 +526,7 @@ function onClickSpeciesSuggestions() {
         species: species,
         tissue: tissue,
     }
+
     $.ajax({
         type:'GET',
         url:'/data/by_celltype',
@@ -535,8 +536,8 @@ function onClickSpeciesSuggestions() {
             plotData = {
                 'result': result,
             };
-            $("#suggest"+newSpecies).text(species.slice(0, 1).toUpperCase()+species.slice(1)).prop('id', "suggest"+species);
             species = result['species'];
+            $("#speciesSuggestionActive").text(species.charAt(0).toUpperCase() + species.slice(1));
 
             // Update search box: corrected feature names, excluding missing features
             setSearchBox(result['features']);
@@ -548,6 +549,14 @@ function onClickSpeciesSuggestions() {
           alert('Error: Could not find orthologs for '+featureNames+'.')
         }
     });
+}
+
+// Check out another tissue
+function onClickTissueSuggestions() {
+    var newTissue = $(this).text().trim();
+    tissue = newTissue;
+    $("#tissueSuggestionActive").text(tissue);
+    AssembleAjaxRequest();
 }
 
 function onClickFeatureSimilarSuggestions(targetType) {
@@ -692,6 +701,7 @@ $("#dotOnClick").click(function() {
 
 // Suggestions
 $(".speciesSuggestion").click(onClickSpeciesSuggestions);
+$(".tissueSuggestion").click(onClickTissueSuggestions);
 $("#geneSimilar").click(function() {
     return onClickFeatureSimilarSuggestions("gene_expression");
 });

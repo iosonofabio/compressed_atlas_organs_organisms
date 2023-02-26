@@ -60,8 +60,8 @@ def render_template(*args, **kwargs):
     kwargs['species'] = kwargs.get('species', config['defaults']['species'])
     kwargs['speciess'] = get_speciess()
     kwargs['tissue'] = kwargs.get('tissue', config['defaults']['tissue'])
-    kwargs['tissues'] = get_tissues(
-            'gene_expression', kwargs['species'])
+    kwargs['tissues'] = list(get_tissues(
+            'gene_expression', kwargs['species']))
     kwargs['feature_types'] = config['feature_types']
     #kwargs['condition'] = config['condition'].capitalize()
     kwargs['unit_measurement'] = config['units']['counts']['long']

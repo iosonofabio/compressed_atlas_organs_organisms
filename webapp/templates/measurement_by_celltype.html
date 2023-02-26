@@ -24,12 +24,54 @@
       {% endif %}
       {% if available_species != [species] %}
       <span class="suggestGroup" id="speciesSuggestions">
-        Other species: 
-        {% for spec in available_species %}
-          {% if species != spec %}
-          <span class="speciesSuggestion suggestButton" id="suggest{{ spec }}">{{ spec|capitalize }}</span>
-          {% endif %}
-        {% endfor %}
+        <span>Other species:</span>
+        <span>
+          <div class="dropdown is-hoverable">
+            <div class="dropdown-trigger">
+              <button class="button" aria-haspopup="false" aria-controls="dropdown-menu">
+                <span id="speciesSuggestionActive">{{ species | capitalize }}</span>
+                <span class="icon is-small">
+                  <i class="fas fa-angle-down" aria-hidden="true"></i>
+                </span>
+              </button>
+            </div>
+            <div class="dropdown-menu" id="dropdown-menu" role="menu">
+              <div class="dropdown-content">
+                {% for spec in available_species %}
+                <a id="suggest{{ spec }}" href="#" class="dropdown-item suggestButton speciesSuggestion">
+                  <span class=speciesIcon><img width="30px" src="/static/images/species_icons/{{ spec }}.svg"></span><span class="speciesText">{{ spec | capitalize }}</span>
+                </a>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+        </span>
+      </span>
+      {% endif %}
+      {% if tissues != [tissue] %}
+      <span class="suggestGroup" id="tissueSuggestions">
+        <span>Other tissues:</span>
+        <span>
+          <div class="dropdown is-hoverable">
+            <div class="dropdown-trigger">
+              <button class="button" aria-haspopup="false" aria-controls="dropdown-menu">
+                <span id="tissueSuggestionActive">{{ tissue }}</span>
+                <span class="icon is-small">
+                  <i class="fas fa-angle-down" aria-hidden="true"></i>
+                </span>
+              </button>
+            </div>
+            <div class="dropdown-menu" id="dropdown-menu" role="menu">
+              <div class="dropdown-content">
+                {% for tiss in tissues %}
+                <a id="suggest{{ tiss }}" href="#" class="dropdown-item suggestButton tissueSuggestion">
+                  <span class=tissueIcon><img width="30px" src="/static/images/tissue_icons/{{ tiss }}.svg"></span><span class="tissueText">{{ tiss }}</span>
+                </a>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+        </span>
       </span>
       {% endif %}
       {% if "gene_expression" in feature_types %}
