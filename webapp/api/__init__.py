@@ -477,12 +477,11 @@ class MeasurementDifferential(Resource):
         return heatmap_data
 
 
-class MeasurementSpeciesComparison(Resource):
+class MeasurementSpeciesComparison1Feature(Resource):
     '''Comparison between species'''
     def get(self):
-        species = request.args.get('species')
-        species_baseline = request.args.get('species_baseline')
-        genes = request.args.get('genes').split(',')
+        tissue = request.args.get('tissue')
+        feature = request.args.get('feature').split(',')
 
         # Get the counts
         # NOTE: this function restricts to the intersection of cell types,

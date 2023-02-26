@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% block content %}
+
+  <div class="columns is-mobile is-centered tab-area plotButtons" style="margin: 0px;">
+    <div class="field column is-one-quarter">
+      <label class="label">Data values</label>
+      <div class="control">
+        <div class="tabs is-toggle is-centered">
+          <ul>
+            <li id="cpmTab" class="is-active">
+              <a id="CPMOnClick">{{ unit_measurement }}</a>
+            </li>
+            <li id="logTab">
+              <a id="log10OnClick">Log10 [{{ unit_measurement_short }}]</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="field column is-one-quarter">
+      <label class="label">Cell type/feature order</label>
+      <div class="control">
+        <div class="tabs is-toggle is-centered">
+          <ul>
+            <li id="originalOrderTab" class="is-active">
+              <a id="originalOnClick">Curated</a>
+            </li>
+            <li id="hierachicalTab">
+              <a id="hClusterOnClick">Hierachical clustering</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="field column is-one-quarter">
+      <label class="label">Heat/Dot</label>
+      <div class="control">
+        <div class="tabs is-toggle is-centered">
+          <ul>
+            <li id="heatTab" class="is-active">
+              <a id="heatOnClick">Heatmap</a>
+            </li>
+            <li id="dotTab">
+              <a id="dotOnClick">Dot plot</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Plots below -->
+  <div class="container" id="dataDisplay">
+    <div class="plotTarget" id="plotDiv"></div>   
+  </div>
+
+  <!-- tooltip (floating div) -->
+  <div id="tooltip" display="none" style="position: absolute; display: none;"></div>
+
+  <script type="module" src="/js/measurement_species_comparison_1feature.js"></script>
+
+{% endblock %}

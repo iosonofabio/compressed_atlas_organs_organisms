@@ -28,7 +28,7 @@ from api import (
     FeaturesNearby,
     GenesInGOTerm,
     MeasurementDifferential,
-    MeasurementSpeciesComparison,
+    MeasurementSpeciesComparison1Feature,
     CheckGenenames,
     MarkerGenes,
     CelltypeAbundance,
@@ -389,15 +389,15 @@ def plot_barplot_GSEA():
         )
 
 
-@app.route("/heatmap_species_comparison", methods=["GET"])
-def heatmap_species_comparison():
-    '''Plot heatmap of cross-species comparison'''
+@app.route("/species_comparison_1feature", methods=["GET"])
+def measurement_species_comparison_1feature():
+    '''Compare measurement across multiple species'''
     from scipy.cluster.hierarchy import linkage, leaves_list
     from scipy.spatial.distance import pdist
 
-    species = request.args.get('species')
+    tissue = request.args.get('tissue')
     species_baseline = request.args.get('species_baseline')
-    genes = request.args.get('genes').split(',')
+    feature = request.args.get('genes').split(',')
 
     # Get the counts
     # NOTE: this function restricts to the intersection of cell types,
