@@ -207,6 +207,8 @@ class MeasurementOvertime1Feature(Resource):
     def get(self):
         '''Get the measurement table (e.g. GE for plotting)'''
         species = request.args.get("species")
+        new_species = request.args.get("newSpecies")
+        tissue = request.args.get("tissue")
 
         feature_name = request.args.get("feature")
         try:
@@ -219,7 +221,6 @@ class MeasurementOvertime1Feature(Resource):
         feature_name = featured['feature_name']
 
         # If we are switching species, get orthologs
-        new_species = request.args.get("newSpecies")
         if new_species is not None:
             if feature_type == 'gene_expression':
                 feature_name = get_orthologs(
@@ -242,6 +243,7 @@ class MeasurementOvertime1Feature(Resource):
                 feature_name,
                 feature_type=feature_type,
                 species=species,
+                tissue=tissue,
                 )
 
         if feature_type == "gene_expression":

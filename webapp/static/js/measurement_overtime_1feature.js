@@ -178,6 +178,7 @@ function AssembleAjaxRequest(errorCallback) {
     let requestData = {
         feature: feature,
         species: species,
+        tissue: tissue,
     }
     $.ajax({
         type:'GET',
@@ -204,9 +205,12 @@ function updateSimilarFeatures() {
     let featureTypes = ['gene_expression', 'chromatin_accessibility'];
     let divIds = ['gene', 'region'];
 
-    for(let k=0; k < 2; k++) {
+    for(let k=0; k < featureTypes.length; k++) {
         let htmlDiv = $('#'+divIds[k]+'SuggestionsDropdown');
         let suggestions = similarFeatures[featureTypes[k]];
+        if (!suggestions) {
+            continue;
+        }
         // Empty current suggestions
         htmlDiv.html("");
         for(let i=0; i < suggestions.length; i++) {
@@ -230,6 +234,7 @@ function onClickSpeciesSuggestions() {
         newSpecies: newSpecies,
         feature: featureName,
         species: species,
+        tissue: tissue,
     }
     $.ajax({
         type:'GET',
@@ -239,10 +244,10 @@ function onClickSpeciesSuggestions() {
             // Store global variable
             plotData = result;
 
-            $("#suggest"+newSpecies).text(species.slice(0, 1).toUpperCase()+species.slice(1)).prop('id', "suggest"+species);
             species = newSpecies;
+            $("#speciesSuggestionActive").text(species.charAt(0).toUpperCase() + species.slice(1));
 
-            updateSimilarGenes();
+            updateSimilarFeatures();
 
             // Update search box: corrected gene names, excluding missing genes
             setSearchBox(result['feature']);
@@ -253,6 +258,15 @@ function onClickSpeciesSuggestions() {
           alert('Error: Could not find orthologs for '+featureName+'.')
         }
     });
+}
+
+
+// Check out another tissue
+function onClickTissueSuggestions() {
+    var newTissue = $(this).text().trim();
+    tissue = newTissue;
+    $("#tissueSuggestionActive").text(tissue);
+    AssembleAjaxRequest();
 }
 
 
@@ -297,6 +311,7 @@ function updatePlot(refresh=false) {
 
 $("#searchOnClick").click(AssembleAjaxRequest);
 $(".speciesSuggestion").click(onClickSpeciesSuggestions);
+$(".tissueSuggestion").click(onClickTissueSuggestions);
 
 // Normalise the data with log10 and generate a new plot (when user click the button)
 $("#log10OnClick" ).click(function() {

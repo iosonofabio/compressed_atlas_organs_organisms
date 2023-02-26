@@ -226,6 +226,7 @@ function AssembleAjaxRequest( featurestring = "") {
         celltype: celltype,
         feature_names: featureNames,
         species: species,
+        tissue: tissue,
     }
     $.ajax({
         type:'GET',

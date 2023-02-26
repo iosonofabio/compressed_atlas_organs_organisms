@@ -104,12 +104,13 @@ def get_counts(
 def get_number_cells(
         df_type,
         species='mouse',
+        tissue='Lung',
         feature_type='gene_expression',
     ):
     '''Read the number of cells per time point per dataset from file'''
     fn_atlas = fn_atlasd[species]
     with h5py.File(fn_atlas) as f:
-        dic = f[feature_type][df_type]
+        dic = f[feature_type]['by_tissue'][tissue][df_type]
         labels = dic['index'].asstr()[:]
         values = dic['cell_count'][:]
         ncells = pd.Series(data=values, index=labels)
@@ -120,6 +121,7 @@ def get_number_cells(
 def get_data_overtime_1feature(
         feature,
         species='mouse',
+        tissue='Lung',
         feature_type='gene_expression',
     ):
     '''Get JS plotly code for big heatmap
@@ -133,11 +135,13 @@ def get_data_overtime_1feature(
     ncells = get_number_cells(
             'celltype_dataset_timepoint',
             species=species,
+            tissue=tissue,
             feature_type=feature_type,
             )
     countg = get_counts(
             'celltype_dataset_timepoint', features=[feature],
             species=species,
+            tissue=tissue,
             feature_type=feature_type,
             ).iloc[0]
 
@@ -182,6 +186,8 @@ def get_data_overtime_1feature(
     return {
         'feature_type': feature_type,
         'feature': feature,
+        'tissue': tissue,
+        'species': species,
         'measurement': countg.T.to_dict(),
         'ncells': ncells.T.to_dict(),
         'celltypes': celltypes,
