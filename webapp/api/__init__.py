@@ -58,6 +58,8 @@ class MeasurementByCelltype(Resource):
         if args is None:
             args = request.args
         species = args.get("species")
+        # Sometimes we are switching to a new species, if so get orthologs
+        new_species = args.get("newSpecies")
         tissue = args.get("tissue")
         featurestring = args.get("feature_names")
 
@@ -93,7 +95,6 @@ class MeasurementByCelltype(Resource):
             feature_names = featurestring.split(',')
 
             # If we are switching species, get orthologs
-            new_species = args.get("newSpecies")
             if new_species is not None:
                 feature_names = get_orthologs(
                     feature_names, species, new_species,

@@ -524,6 +524,7 @@ function onClickSpeciesSuggestions() {
         newSpecies: newSpecies,
         feature_names: featureNames,
         species: species,
+        tissue: tissue,
     }
     $.ajax({
         type:'GET',
