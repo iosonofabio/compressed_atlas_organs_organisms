@@ -29,6 +29,7 @@ from api import (
     GenesInGOTerm,
     MeasurementDifferential,
     MeasurementSpeciesComparison1Feature,
+    MeasurementSpeciesComparison1Celltype,
     CheckGenenames,
     MarkerGenes,
     CelltypeAbundance,
@@ -471,7 +472,9 @@ app_api.add_resource(FeaturesNearby, "/data/features_nearby")
 app_api.add_resource(GenesInGOTerm, "/data/genes_in_go_term")
 app_api.add_resource(MeasurementDifferential, "/data/differential")
 app_api.add_resource(MeasurementSpeciesComparison1Feature,
-                     "/data/speciescomparison_1feature")
+                     "/data/speciescomparison/1feature")
+app_api.add_resource(MeasurementSpeciesComparison1Celltype,
+                     "/data/speciescomparison/1celltype")
 app_api.add_resource(CheckGenenames, "/check_genenames")
 app_api.add_resource(MarkerGenes, "/data/marker_genes")
 app_api.add_resource(CelltypeAbundance, "/data/celltype_abundance")

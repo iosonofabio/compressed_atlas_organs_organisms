@@ -27,7 +27,7 @@ function computeMarkerSizeOvertime(nc) {
     return ms;
 }
 
-function getDomains(axiss, invert=false) {
+function getDomains(axiss, invert=false, start=0, end=1.0) {
     let nPlots = axiss.length;
     let ntot = axiss.reduce((acc, a) => acc + a.length, 0);
     let domains = [];
@@ -49,7 +49,17 @@ function getDomains(axiss, invert=false) {
         }
         domains.push(domain);
     }
-    return domains
+
+    // Compress dynamic range if requested
+    if ((start > 0) || (end < 1.0)) {
+        const d = end - start;
+        for (let k=0; k < nPlots; k++) {
+            domains[k][0] = start + domains[k][0] * d;
+            domains[k][1] = start + domains[k][1] * d;
+        }
+    }
+
+    return domains;
 }
 
 function getPseudocount(featureType) {

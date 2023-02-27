@@ -13,6 +13,7 @@ from scipy.spatial.distance import pdist
 from config import configuration as config
 from models import (
         get_speciess,
+        get_celltypes,
         get_counts,
         get_data_overtime_1feature,
         get_data_overtime_1celltype,
@@ -344,6 +345,208 @@ class MeasurementOvertime1Celltype(Resource):
         return result
 
 
+class MeasurementSpeciesComparison1Feature(Resource):
+    '''Comparison between species, one feature'''
+    def get(self):
+        tissue = request.args.get('tissue')
+        feature = request.args.get('feature')
+        species_orig = request.args.get('species')
+        feature_type = 'gene_expression'
+
+        # Get the counts
+        # NOTE: this function restricts to the intersection of cell types,
+        # which makes the hierarchical clustering easy. In summary, both
+        # genes and cell types are fully synched now
+        speciess = get_speciess()
+
+        featured = {}
+        dfs = []
+        for species in speciess:
+            if species == species_orig:
+                feature_orth = feature
+            else:
+                feature_orth = get_orthologs(
+                    [feature], species_orig, species,
+                )[species][0]
+
+            featured[species] = feature_orth
+
+            df = get_counts(
+                    "celltype",
+                    feature_type=feature_type,
+                    features=[feature_orth],
+                    species=species,
+                    tissue=tissue,
+                    missing='throw',
+                    ).loc[feature_orth]
+            df.name = species
+            dfs.append(df)
+
+        df = pd.concat(
+                dfs,
+                axis=1,
+            ).fillna(-1)
+
+        # Hierarchical clustering of cell types
+        celltypes = list(df.index)
+        if len(celltypes) <= 2:
+            celltypes_hierarchical = celltypes
+        else:
+            idx_ct_hierarchical = leaves_list(linkage(
+                pdist(df.values),
+                optimal_ordering=True),
+            )
+            celltypes_hierarchical = [celltypes[i] for i in idx_ct_hierarchical]
+
+        data = {
+            'data': df.to_dict(),
+            'celltypes': celltypes,
+            'celltypes_hierarchical': celltypes_hierarchical,
+            'speciess': df.columns.tolist(),
+            'speciess_hierarchical': df.columns.tolist(),
+            'feature_type': feature_type,
+            'tissue': tissue,
+        }
+
+        data['similar_features'] = {}
+        for correlates_type in config['feature_types']:
+            similar_features = get_features_correlated(
+                    [feature],
+                    feature_type=feature_type,
+                    correlates_type=correlates_type,
+                    species=species_orig,
+                ).split(',')
+            if (len(similar_features) > 0) and (similar_features[0] == feature):
+                del similar_features[0]
+            data['similar_features'][correlates_type] = similar_features
+
+        return data
+
+
+class MeasurementSpeciesComparison1Celltype(Resource):
+    '''Comparison between species, one feature'''
+    def get(self):
+        '''Get the data'''
+        tissue = request.args.get('tissue')
+        species_orig = request.args.get('species')
+        speciess = get_speciess()
+
+        celltypes_available = set()
+        for species in speciess:
+            celltypes_available.update(
+                set(get_celltypes('gene_expression', species, tissue))
+            )
+        celltypes_available = sorted(celltypes_available)
+
+        celltype = request.args.get("celltype")
+        celltype_validated = validate_correct_celltypestr(celltype)
+
+        # When switching tissue, the current cell type is not always available
+        if celltype_validated not in celltypes_available:
+            celltype_validated = celltypes_available[0]
+
+        featurestring = request.args.get("feature_names")
+        if (featurestring is None) or (featurestring == ''):
+            featurestring = config['defaults']['genestring']
+
+        # A cap on gene names to avoid overload is reasonable
+        featurestring = ','.join(featurestring.replace(' ', '').split(',')[:500])
+
+        featured = validate_correct_feature_mix(
+                featurestring,
+                species=species_orig)
+
+        if len(featured) == 0:
+            return None
+
+        # Get the counts: chain species as columns, feature types as rows
+        dfs = []
+        feature_types = []
+        features = []
+        features_hierarchical = []
+        gene_ids = []
+        for feature_type, featurestring in featured.items():
+            df_ft = []
+            feature_names = featurestring.split(',')
+            for species in speciess:
+                if species == species_orig:
+                    features_orth = feature_names
+                    features.append(feature_names)
+                    if feature_type != 'gene_expression':
+                        gene_ids.append(None)
+                    else:
+                        gene_ids.append(
+                                get_gene_ids(features_orth, species=species))
+                else:
+                    features_orth = get_orthologs(
+                        feature_names, species_orig, species,
+                    )[species]
+
+                df = get_counts(
+                        "celltype",
+                        feature_type=feature_type,
+                        features=features_orth,
+                        species=species,
+                        tissue=tissue,
+                        missing='throw',
+                        )
+
+                if celltype_validated in df.columns:
+                    df = df.loc[:, celltype_validated]
+                else:
+                    df = pd.Series(
+                        data=-np.ones(len(features_orth)),
+                        index=features_orth,
+                    )
+                df.name = species
+                
+                # Rename genes according to the dominant species, to enable
+                # dataframe merging. Perhaps we could come up with a better
+                # scheme but fine for now
+                df.index = feature_names
+
+                df_ft.append(df)
+
+            # data across species, for one feature type (e.g. gene exp)
+            df_ft = pd.concat(
+                    df_ft,
+                    axis=1,
+                ).fillna(-1)
+
+            feature_types.append(feature_type)
+            dfs.append(df_ft)
+
+        # Hierarchical clustering of cell types
+        feature_names = list(df_ft.index)
+        if len(feature_names) <= 2:
+            fea_hierarchical = feature_names
+        else:
+            idx_fea_hierarchical = leaves_list(linkage(
+                pdist(df_ft.values),
+                optimal_ordering=True),
+            )
+            fea_hierarchical = [feature_names[i] for i in idx_fea_hierarchical]
+        features_hierarchical.append(fea_hierarchical)
+
+        searchstring = ','.join(sum(features, []))
+
+        data = {
+            'data': [df.to_dict() for df in dfs],
+            'features': features,
+            'features_hierarchical': features_hierarchical,
+            'gene_ids': gene_ids,
+            'speciess': speciess,
+            'speciess_hierarchical': speciess,
+            'feature_type': feature_types,
+            'tissue': tissue,
+            'celltype': celltype,
+            'celltypes_tissue': celltypes_available,
+            'searchstring': searchstring,
+        }
+
+        return data
+
+
 class MeasurementCondition(Resource):
     '''API for condition vs normal data'''
     def get(self):
@@ -478,83 +681,6 @@ class MeasurementDifferential(Resource):
         }
         return heatmap_data
 
-
-class MeasurementSpeciesComparison1Feature(Resource):
-    '''Comparison between species'''
-    def get(self):
-        tissue = request.args.get('tissue')
-        feature = request.args.get('feature')
-        species_orig = request.args.get('species')
-        feature_type = 'gene_expression'
-
-        # Get the counts
-        # NOTE: this function restricts to the intersection of cell types,
-        # which makes the hierarchical clustering easy. In summary, both
-        # genes and cell types are fully synched now
-        speciess = get_speciess()
-
-        featured = {}
-        dfs = []
-        for species in speciess:
-            if species == species_orig:
-                feature_orth = feature
-            else:
-                feature_orth = get_orthologs(
-                    [feature], species_orig, species,
-                )[species][0]
-
-            featured[species] = feature_orth
-
-            df = get_counts(
-                    "celltype",
-                    feature_type=feature_type,
-                    features=[feature_orth],
-                    species=species,
-                    tissue=tissue,
-                    missing='throw',
-                    ).loc[feature_orth]
-            df.name = species
-            dfs.append(df)
-
-        df = pd.concat(
-                dfs,
-                axis=1,
-            ).fillna(-1)
-
-        # Hierarchical clustering of cell types
-        celltypes = list(df.index)
-        if len(celltypes) <= 2:
-            celltypes_hierarchical = celltypes
-        else:
-            idx_ct_hierarchical = leaves_list(linkage(
-                pdist(df.values),
-                optimal_ordering=True),
-            )
-            celltypes_hierarchical = [celltypes[i] for i in idx_ct_hierarchical]
-
-        data = {
-            'data': df.to_dict(),
-            'celltypes': celltypes,
-            'celltypes_hierarchical': celltypes_hierarchical,
-            'speciess': df.columns.tolist(),
-            'speciess_hierarchical': df.columns.tolist(),
-            'feature_type': feature_type,
-            'tissue': tissue,
-        }
-
-        data['similar_features'] = {}
-        for correlates_type in config['feature_types']:
-            similar_features = get_features_correlated(
-                    [feature],
-                    feature_type=feature_type,
-                    correlates_type=correlates_type,
-                    species=species_orig,
-                ).split(',')
-            if (len(similar_features) > 0) and (similar_features[0] == feature):
-                del similar_features[0]
-            data['similar_features'][correlates_type] = similar_features
-
-        return data
 
 class PlotsForSeachGenes(Resource):
     def get(self):

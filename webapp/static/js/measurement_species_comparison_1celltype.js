@@ -4,7 +4,7 @@ import { dotPlotSizeToFrac, dotPlotFracToSize, getDomains, getPseudocount, getTi
 // Use global variables to store persistent data
 var plotData = {};
 
-function plotMeasurementSpeciesComparison1Feature(
+function plotMeasurementSpeciesComparison1Celltype(
     result,
     dataScale,
     tableOrder,
@@ -13,73 +13,89 @@ function plotMeasurementSpeciesComparison1Feature(
     let htmlElementId = 'plotDiv';
     let htmlElement = document.getElementById(htmlElementId);
 
-    let x_axis, y_axis;
+    let nPlots = result['data'].length;
+    let x_axis, y_axiss;
     if (tableOrder == "original") {
-        y_axis = result['celltypes'];
+        y_axiss = result['features'];
         x_axis = result['speciess'];
     } else {
-        y_axis = result['celltypes_hierarchical'];
+        y_axiss = result['features_hierarchical'];
         x_axis = result['speciess_hierarchical'];
     }
 
     let longestXlabel = 0, longestYlabel = 0;
-    for (let i=0; i < y_axis.length; i++) {
-        longestYlabel = Math.max(longestYlabel, result['celltypes'][i].length);
-    }
     for (let i=0; i < x_axis.length; i++) {
         longestXlabel = Math.max(longestXlabel, result['speciess'][i].length);
     }
+    for (let k=0; k < y_axiss.length; k++) {
+        for (let i=0; i < y_axiss[k].length; i++) {
+            longestYlabel = Math.max(longestYlabel, result['features'][k][i].length);
+        }
+    }
 
-    let ncelltypes = y_axis.length;
+    let nfeatures = y_axiss.reduce((acc, a) => acc + a.length, 0);
     let nspecies = x_axis.length;
     let pxCell = 40, pxChar = 4.4, plotGap = 10;
     let ytickMargin = 85 + pxChar * longestYlabel;
     let xtickMargin = 15 + pxChar * longestXlabel;
     let graphWidth = ytickMargin + pxCell * nspecies + 60;
     let dendrographHeight = 50;
-    let graphHeight = pxCell * ncelltypes + dendrographHeight + plotGap + xtickMargin;
+    let graphHeight = pxCell * nfeatures + dendrographHeight + (plotGap * nPlots) + xtickMargin;
 
-    let yAxisDomains = [
-        [0, 1.0 * (pxCell * ncelltypes) / graphHeight],
-        [1.0 * (pxCell * ncelltypes + plotGap) / graphHeight, 1.0],
-    ];
+    let yAxisDomains = getDomains(
+        y_axiss, false,
+        0,
+        1.0 - 1.0 * dendrographHeight / graphHeight);
 
-    // Fill trace data
-    let zs = [];
-    let measurement;
-    for (let i = 0; i < y_axis.length; i++) {
-        const celltype = y_axis[i];
-        zs.push([]);
-        for (let j = 0; j < x_axis.length; j++) {
-            const spec = x_axis[j];
-            if (dataScale == "original") {
-                measurement = result['data'][spec][celltype];
-            } else {
-                let pseudoCount = getPseudocount(result['feature_type']);
-                measurement = Math.log10(result['data'][spec][celltype] + pseudoCount);
-            }
-            zs[i].push(measurement);
-        }
+    // Add hyperlinks to feature names if they are genes
+    let yticktexts = [];
+    for (let k=0; k < nPlots; k++) {
+        let yticktexts_k = getTickTexts(
+            y_axiss[k],
+            result['feature_type'][k],
+            result['gene_ids'][k],
+        );
+        yticktexts.push(yticktexts_k);
     }
 
     // Layout for plotly
+    let traces = [];
     let layout = {
         autosize: true,
         width: graphWidth,
         height: graphHeight,
+        margin: {
+            l: ytickMargin,
+            r: 0,
+            b: 0,
+            t: 0,
+            pad: 4,
+        },
         xaxis: {
             automargin: true,
-            tickangle: 90,
-            scaleanchor: 'y',
-            scaleratio: 1,
-            type: 'category',
-        },
-        yaxis: {
-            automargin: true,
-            autorange: "reversed",
+            tickangle: 270,
             type: 'category',
         },
     };
+    for (let k=0; k < nPlots; k++) {
+        traces.push({});
+        let yaxisName = 'yaxis', yaxisShort = 'y';
+        if (k != 0) {
+            yaxisName += (k+1);
+            yaxisShort += (k+1);
+        }
+        traces[k]['yaxis'] = yaxisShort;
+        layout[yaxisName] = {
+            autorange: "reversed",
+            type: 'category',
+            automargin: false,
+            scaleanchor: 'x',
+            scaleratio: 1,
+            tickvals: y_axiss[k],
+            ticktext: yticktexts[k],
+            domain: yAxisDomains[k],
+        };
+    }
 
     // Config for plotly
     let config = {
@@ -106,26 +122,36 @@ function plotMeasurementSpeciesComparison1Feature(
       ],
     }
 
-    // Trace for plotly
-    let trace = {
-        type: 'heatmap',
-        hoverongaps: false,
-        z: zs,
-        x: x_axis,
-        y: y_axis,
-    }
-    if (dataScale === "log2FC") {
-        trace['colorscale'] = 'RdBu';
-        trace['zmid'] = 0;
-    } else {
-        trace['colorscale'] = 'Reds';
-        trace['zmid'] = '';
+    // Fill trace data
+    for (let k=0; k < nPlots; k++) {
+        traces[k]['type'] = 'heatmap';
+        traces[k]['hoverongaps'] = false;
+        traces[k]['colorscale'] = 'Reds';
+
+        let zs = [];
+        let measurement;
+        for (let i = 0; i < y_axiss[k].length; i++) {
+            const feature = y_axiss[k][i];
+            zs.push([]);
+            for (let j = 0; j < x_axis.length; j++) {
+                const spec = x_axis[j];
+                measurement = result['data'][k][spec][feature];
+                if (dataScale != "original") {
+                    let pseudoCount = getPseudocount(result['feature_type']);
+                    measurement = Math.log10(measurement + pseudoCount);
+                }
+                zs[i].push(measurement);
+            }
+        }
+        traces[k]['z'] = zs;
+        traces[k]['x'] = x_axis;
+        traces[k]['y'] = y_axiss[k];
     }
 
     if ($('#'+htmlElementId).html() === "") {
-        Plotly.newPlot(htmlElement, [trace], layout, config); 
+        Plotly.newPlot(htmlElement, traces, layout, config); 
     } else {
-        Plotly.react(htmlElement, [trace], layout, config); 
+        Plotly.react(htmlElement, traces, layout, config); 
     }
 } 
 
@@ -142,7 +168,7 @@ function updatePlot() {
     }
 
     // NOTE: plotData is the global persistent object
-    plotMeasurementSpeciesComparison1Feature(
+    plotMeasurementSpeciesComparison1Celltype(
         plotData, 
         dataScale,
         tableOrder,
@@ -152,70 +178,81 @@ function updatePlot() {
 
 // gene of interest: Car4,Vwf,Col1a1,Ptprc,Ms4a1
 // Col1a1,Fsd1l
-function AssembleAjaxRequest(errorCallback) {
+function AssembleAjaxRequest() {
+    // Get celltype
+    let celltype = $("#celltypeSuggestionActive").text();
+
     // Get the list of genes to plot from the search box
-    let feature = $('#searchFeatures').val();
+    let feature_names = $('#searchFeatures').val();
     // NOTE: you cannot cache the genes because the hierarchical clustering
     // will differ anyway
 
     let requestData = {
-        feature: feature,
+        feature_names: feature_names,
         tissue: tissue,
         species: species,
+        celltype: celltype,
     }
 
     // sent conditions and gene names to the API
     $.ajax({
         type:'GET',
-        url:'/data/speciescomparison/1feature',
+        url:'/data/speciescomparison/1celltype',
         data: $.param(requestData),
         dataType:'json',
         success: function(result) {
             plotData = result;
 
-            updateSimilarFeatures();
+            updateCelltypeSuggestions();
+            $('#searchFeatures').val(plotData['searchstring']);
 
             updatePlot();
         },
-        error: function (e) {
-            errorCallback(e);
+        error: function(e) {
+            console.log(e);
             alert('Request data Failed');
         }
     });
 
 };
 
-function updateSimilarFeatures() {
-    let similarFeatures = plotData['similar_features'];
-    let featureTypes = ['gene_expression', 'chromatin_accessibility'];
-    let divIds = ['gene', 'region'];
 
-    for(let k=0; k < featureTypes.length; k++) {
-        let htmlDiv = $('#'+divIds[k]+'SuggestionsDropdown');
-        let suggestions = similarFeatures[featureTypes[k]];
-        if (!suggestions) {
-            continue;
+function updateCelltypeSuggestions() {
+
+    let htmlDiv = $('#celltypeSuggestionsDropdown');
+    let suggestions = plotData['celltypes_tissue'];
+    if (!suggestions) {
+        return;
+    }
+    // Empty current suggestions
+    htmlDiv.html("");
+    for(let i=0; i < suggestions.length; i++) {
+        if (i != 0) {
+            htmlDiv.append("<hr class=\"dropdown-divider\">");
         }
-        // Empty current suggestions
-        htmlDiv.html("");
-        for(let i=0; i < suggestions.length; i++) {
-            if (i != 0) {
-                htmlDiv.append("<hr class=\"dropdown-divider\">");
-            }
-            htmlDiv.append("<a href=\"#\" class=\"dropdown-item featureSuggestion\" id=\"featureSuggestion_" + suggestions[i] + "\">" + suggestions[i] + "</a>");
-        }
+        htmlDiv.append("<a href=\"#\" class=\"dropdown-item celltypeSuggestion\" id=\"celltypeSuggestion_" + suggestions[i] + "\">" + suggestions[i] + "</a>");
     }
 
+    $("#celltypeSuggestionActive").text(plotData['celltype']);
+
     // Rebind the callback since the old elements are gone
-    $(".featureSuggestion").click(onClickFeatureSuggestion);
+    $(".celltypeSuggestion").click(onClickCelltypeSuggestions);
 
 }
 
+
 // Check out another tissue
 function onClickTissueSuggestions() {
-    var newTissue = $(this).text().trim();
+    let newTissue = $(this).text().trim();
     tissue = newTissue;
     $("#tissueSuggestionActive").text(tissue);
+    AssembleAjaxRequest();
+}
+
+// Check out another cell type
+function onClickCelltypeSuggestions() {
+    let newCelltype = $(this).text().trim();
+    $("#celltypeSuggestionActive").text(newCelltype);
     AssembleAjaxRequest();
 }
 
@@ -226,9 +263,7 @@ function onClickFeatureSuggestion() {
     $('#searchFeatures').val(newFeature);
 
     // Get new data and plot
-    AssembleAjaxRequest(function(e) {
-        $('#searchFeatures').val(oldFeature);
-    });
+    AssembleAjaxRequest();
 }
 
 
@@ -281,6 +316,7 @@ $("#dotOnClick").click(function() {
 
 // Suggestions
 $(".tissueSuggestion").click(onClickTissueSuggestions);
+$(".celltypeSuggestion").click(onClickCelltypeSuggestions);
 $("#geneSimilar").click(function() {
     return onClickFeatureSimilarSuggestions("gene_expression");
 });

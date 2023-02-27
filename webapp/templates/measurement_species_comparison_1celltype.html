@@ -4,46 +4,17 @@
   <div class="columns is-mobile is-centered tab-area">
     <div id="suggestions">
       <span id="suggestionsHeader">Suggestions:</span>
+
       <span class="suggestGroup" id="similarSuggestions">
         Similar:
         {% if "gene_expression" in feature_types %}
-        <div class="dropdown is-hoverable">
-          <div class="dropdown-trigger">
-            <button class="button" aria-haspopup="true" aria-controls="dropdown-menu4">
-              <span>Genes</span>
-              <span class="icon is-small">
-                <i class="fas fa-angle-down" aria-hidden="true"></i>
-              </span>
-            </button>
-          </div>
-          <div class="dropdown-menu" role="menu">
-            <div class="dropdown-content" id="geneSuggestionsDropdown">
-              <div class="dropdown-item">
-                <p>You can insert <strong>any type of content</strong> within the dropdown menu.</p>
-              </div>
-            </div>
-          </div>
-        </div>
+        <span class="suggestButton" id="geneSimilar">Genes</span>
         {% endif %}
         {% if "chromatin_accessibility" in feature_types %}
-        <div class="dropdown is-hoverable">
-          <div class="dropdown-trigger">
-            <button class="button" aria-haspopup="true" aria-controls="dropdown-menu4">
-              <span>Regions</span>
-              <span class="icon is-small">
-                <i class="fas fa-angle-down" aria-hidden="true"></i>
-              </span>
-            </button>
-          </div>
-          <div class="dropdown-menu" role="menu">
-            <div class="dropdown-content" id="regionSuggestionsDropdown">
-              <div class="dropdown-item">
-                <p>You can insert <strong>any type of content</strong> within the dropdown menu.</p>
-              </div>
-            </div>
-          </div>
+        <span class="suggestButton" id="regionSimilar">Regions</span>
         {% endif %}
       </span>
+
       {% if "chromatin_accessibility" in feature_types %}
       <span class="suggestGroup" id="nearbySuggestions">
         Nearby:
@@ -53,6 +24,30 @@
         <span class="suggestButton" id="regionNearby">Regions</span>
       </span>
       {% endif %}
+
+      <span class="suggestGroup" id="celltypeSuggestions">
+        <span>Other cell types:</span>
+        <span>
+          <div class="dropdown is-hoverable">
+            <div class="dropdown-trigger">
+              <button class="button" aria-haspopup="false" aria-controls="dropdown-menu">
+                <span id="celltypeSuggestionActive">{{celltype}}</span>
+                <span class="icon is-small">
+                  <i class="fas fa-angle-down" aria-hidden="true"></i>
+                </span>
+              </button>
+            </div>
+            <div class="dropdown-menu" id="dropdown-menu" role="menu">
+              <div class="dropdown-content" id="celltypeSuggestionsDropdown">
+                <div class="dropdown-item">
+                  <p>You can insert <strong>any type of content</strong> within the dropdown menu.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </span>
+      </span>
+
       {% if tissues != [tissue] %}
       <span class="suggestGroup" id="tissueSuggestions">
         <span>Other tissues:</span>
@@ -81,8 +76,6 @@
       {% endif %}
     </div>
   </div>
-
-
 
   <div class="columns is-mobile is-centered tab-area plotButtons" style="margin: 0px;">
     <div class="field column is-one-quarter">
@@ -140,6 +133,6 @@
   <!-- tooltip (floating div) -->
   <div id="tooltip" display="none" style="position: absolute; display: none;"></div>
 
-  <script type="module" src="/js/measurement_species_comparison_1feature.js"></script>
+  <script type="module" src="/js/measurement_species_comparison_1celltype.js"></script>
 
 {% endblock %}
