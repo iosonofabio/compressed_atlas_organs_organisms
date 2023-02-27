@@ -7,10 +7,41 @@
       <span class="suggestGroup" id="similarSuggestions">
         Similar:
         {% if "gene_expression" in feature_types %}
-        <span class="suggestButton" id="geneSimilar">Genes</span>
+        <div class="dropdown is-hoverable">
+          <div class="dropdown-trigger">
+            <button class="button" aria-haspopup="true" aria-controls="dropdown-menu4">
+              <span>Genes</span>
+              <span class="icon is-small">
+                <i class="fas fa-angle-down" aria-hidden="true"></i>
+              </span>
+            </button>
+          </div>
+          <div class="dropdown-menu" role="menu">
+            <div class="dropdown-content" id="geneSuggestionsDropdown">
+              <div class="dropdown-item">
+                <p>You can insert <strong>any type of content</strong> within the dropdown menu.</p>
+              </div>
+            </div>
+          </div>
+        </div>
         {% endif %}
         {% if "chromatin_accessibility" in feature_types %}
-        <span class="suggestButton" id="regionSimilar">Regions</span>
+        <div class="dropdown is-hoverable">
+          <div class="dropdown-trigger">
+            <button class="button" aria-haspopup="true" aria-controls="dropdown-menu4">
+              <span>Regions</span>
+              <span class="icon is-small">
+                <i class="fas fa-angle-down" aria-hidden="true"></i>
+              </span>
+            </button>
+          </div>
+          <div class="dropdown-menu" role="menu">
+            <div class="dropdown-content" id="regionSuggestionsDropdown">
+              <div class="dropdown-item">
+                <p>You can insert <strong>any type of content</strong> within the dropdown menu.</p>
+              </div>
+            </div>
+          </div>
         {% endif %}
       </span>
       {% if "chromatin_accessibility" in feature_types %}

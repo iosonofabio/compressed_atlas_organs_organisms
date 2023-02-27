@@ -532,16 +532,29 @@ class MeasurementSpeciesComparison1Feature(Resource):
             )
             celltypes_hierarchical = [celltypes[i] for i in idx_ct_hierarchical]
 
-        return {
+        data = {
             'data': df.to_dict(),
             'celltypes': celltypes,
             'celltypes_hierarchical': celltypes_hierarchical,
             'speciess': df.columns.tolist(),
-            'speciess_hierarchical': df.columns.tolist(),  # TODO
+            'speciess_hierarchical': df.columns.tolist(),
             'feature_type': feature_type,
             'tissue': tissue,
         }
 
+        data['similar_features'] = {}
+        for correlates_type in config['feature_types']:
+            similar_features = get_features_correlated(
+                    [feature],
+                    feature_type=feature_type,
+                    correlates_type=correlates_type,
+                    species=species_orig,
+                ).split(',')
+            if (len(similar_features) > 0) and (similar_features[0] == feature):
+                del similar_features[0]
+            data['similar_features'][correlates_type] = similar_features
+
+        return data
 
 class PlotsForSeachGenes(Resource):
     def get(self):

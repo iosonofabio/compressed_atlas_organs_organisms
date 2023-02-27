@@ -152,7 +152,7 @@ function updatePlot() {
 
 // gene of interest: Car4,Vwf,Col1a1,Ptprc,Ms4a1
 // Col1a1,Fsd1l
-function AssembleAjaxRequest() {
+function AssembleAjaxRequest(errorCallback) {
     // Get the list of genes to plot from the search box
     let feature = $('#searchFeatures').val();
     // NOTE: you cannot cache the genes because the hierarchical clustering
@@ -172,15 +172,44 @@ function AssembleAjaxRequest() {
         dataType:'json',
         success: function(result) {
             plotData = result;
+
+            updateSimilarFeatures();
+
             updatePlot();
         },
         error: function (e) {
-            console.log(e);
+            errorCallback(e);
             alert('Request data Failed');
         }
     });
 
 };
+
+function updateSimilarFeatures() {
+    let similarFeatures = plotData['similar_features'];
+    let featureTypes = ['gene_expression', 'chromatin_accessibility'];
+    let divIds = ['gene', 'region'];
+
+    for(let k=0; k < featureTypes.length; k++) {
+        let htmlDiv = $('#'+divIds[k]+'SuggestionsDropdown');
+        let suggestions = similarFeatures[featureTypes[k]];
+        if (!suggestions) {
+            continue;
+        }
+        // Empty current suggestions
+        htmlDiv.html("");
+        for(let i=0; i < suggestions.length; i++) {
+            if (i != 0) {
+                htmlDiv.append("<hr class=\"dropdown-divider\">");
+            }
+            htmlDiv.append("<a href=\"#\" class=\"dropdown-item featureSuggestion\" id=\"featureSuggestion_" + suggestions[i] + "\">" + suggestions[i] + "</a>");
+        }
+    }
+
+    // Rebind the callback since the old elements are gone
+    $(".featureSuggestion").click(onClickFeatureSuggestion);
+
+}
 
 // Check out another tissue
 function onClickTissueSuggestions() {
@@ -189,6 +218,19 @@ function onClickTissueSuggestions() {
     $("#tissueSuggestionActive").text(tissue);
     AssembleAjaxRequest();
 }
+
+// Check out a similar feature
+function onClickFeatureSuggestion() {
+    let oldFeature = $('#searchFeatures').val();
+    let newFeature = $(this).text();
+    $('#searchFeatures').val(newFeature);
+
+    // Get new data and plot
+    AssembleAjaxRequest(function(e) {
+        $('#searchFeatures').val(oldFeature);
+    });
+}
+
 
 ////////////////////
 // EVENTS
