@@ -133,14 +133,8 @@ function plotMeasurementSpeciesComparison1Feature(
 // NOTE: this is why react was invented...
 function updatePlot() {
     let dataScale = "original";
-    if ($("#log2FCTab").hasClass('is-active')) {
-        dataScale = "log2FC";
-    } else if ($("#logTab").hasClass('is-active')) {
+    if ($("#logTab").hasClass('is-active')) {
         dataScale = "log10";
-    } else if ($("#cpmBaselineTab").hasClass('is-active')) {
-        dataScale = "originalBaseline";
-    } else if ($("#logBaselineTab").hasClass('is-active')) {
-        dataScale = "log10Baseline";
     }
     let tableOrder = "original";
     if (!$("#originalOrderTab").hasClass('is-active')) {
@@ -188,17 +182,74 @@ function AssembleAjaxRequest() {
 
 };
 
-// normalization
-$(".dataScaleButton" ).click(function() {
-    $(".dataScaleButton").removeClass('is-active');
-    $(this).addClass('is-active');
-    updatePlot()
-});
-// order of cell types
-$(".dataOrderButton" ).click(function() {
-    $(".dataOrderButton").removeClass('is-active');
-    $(this).addClass('is-active');
+// Check out another tissue
+function onClickTissueSuggestions() {
+    var newTissue = $(this).text().trim();
+    tissue = newTissue;
+    $("#tissueSuggestionActive").text(tissue);
+    AssembleAjaxRequest();
+}
+
+////////////////////
+// EVENTS
+////////////////////
+// Normalise the data with log10 and generate a new plot (when user click the button)
+$("#log10OnClick" ).click(function() {
+    // if User has input their features of interest, generate the heatmap with that value
+    // otherwise use the default data
+    $("#logTab").addClass('is-active');
+    $("#cpmTab").removeClass('is-active');
     updatePlot();
+});
+
+$("#CPMOnClick" ).click(function() {
+    $("#logTab").removeClass('is-active');
+    $("#cpmTab").addClass('is-active');
+    updatePlot();
+});
+
+// Second set of buttons
+$("#hClusterOnClick" ).click(function() {
+    // if User has input their features of interest, generate the heatmap with that value
+    // otherwise use the default data
+    $("#hierachicalTab").addClass('is-active');
+    $("#originalOrderTab").removeClass('is-active');
+    updatePlot();
+});
+
+
+$("#originalOnClick").click(function() {
+    $("#originalOrderTab").addClass('is-active');
+    $("#hierachicalTab").removeClass('is-active');
+    updatePlot();
+});
+
+// Third set of buttons
+$("#heatOnClick").click(function() {
+    $("#heatTab").addClass('is-active');
+    $("#dotTab").removeClass('is-active');
+    updatePlot(true);
+});
+
+$("#dotOnClick").click(function() {
+    $("#dotTab").addClass('is-active');
+    $("#heatTab").removeClass('is-active');
+    updatePlot(true);
+});
+
+// Suggestions
+$(".tissueSuggestion").click(onClickTissueSuggestions);
+$("#geneSimilar").click(function() {
+    return onClickFeatureSimilarSuggestions("gene_expression");
+});
+$("#regionSimilar").click(function() {
+    return onClickFeatureSimilarSuggestions("chromatin_accessibility");
+});
+$("#geneNearby").click(function() {
+    return onClickFeatureNearbySuggestions("gene_expression");
+});
+$("#regionNearby").click(function() {
+    return onClickFeatureNearbySuggestions("chromatin_accessibility");
 });
 
 // Search
