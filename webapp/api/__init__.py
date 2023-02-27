@@ -11,6 +11,7 @@ from scipy.spatial.distance import pdist
 # Helper functions
 from config import configuration as config
 from models import (
+        get_speciess,
         get_counts,
         get_data_overtime_1feature,
         get_data_overtime_1celltype,
@@ -482,58 +483,78 @@ class MeasurementSpeciesComparison1Feature(Resource):
     def get(self):
         tissue = request.args.get('tissue')
         feature = request.args.get('feature').split(',')
+        species_orig = request.args.get('species')
+        feature_type = 'gene_expression'
+
 
         # Get the counts
         # NOTE: this function restricts to the intersection of cell types,
         # which makes the hierarchical clustering easy. In summary, both
         # genes and cell types are fully synched now
-        dfs = get_data_species_comparison(species, species_baseline, genes)
+        speciess = get_speciess()
 
-        # Hierarchical clustering
-        df = np.log10(dfs[0] + 0.5)
+        dfd = {}
+        for species in speciess:
+            if species == species_orig:
+                feature_orth = feature
+            else:
+                feature_orth = get_orthologs(
+                    [feature], species_orig, species,
+                )[species][0]
 
-        # Get hierarchical clustering of genes
-        if len(genes) > 2:
-            new_order = leaves_list(linkage(
-                        pdist(df.values),
-                        optimal_ordering=True,
-                        ))
-            genes_hierarchical = df.index[new_order].tolist()
-            genes_hierarchical_baseline = dfs[1].index[new_order].tolist()
-        else:
-            genes_hierarchical = dfs[0].index.tolist()
-            genes_hierarchical_baseline = dfs[1].index.tolist()
+            df = get_counts(
+                    "celltype",
+                    feature_type=feature_type,
+                    features=[feature_orth],
+                    species=species,
+                    tissue=tissue,
+                    missing='throw',
+                    )
 
-        # Get hierarchical clustering of cell types
-        # NOTE: both dfs have the same celltypes (see above note)
-        new_order = leaves_list(linkage(
-                    pdist(df.values.T),
-                    optimal_ordering=True,
-                    ))
-        celltypes_hierarchical = df.columns[new_order].tolist()
+            print(df)
 
-        # Gene hyperlinks (they hold for both)
-        gene_ids = get_gene_ids(df.index, species)
+            dfd[species] = df
 
-        # Inject dfs into template
-        # NOTE: the whole converting DataFrame to dict of dict makes this quite
-        # a bit more heavy than it should be... just use a list of lists and
-        # accompanying lists of indices
-        heatmap_data = {
-            'data': dfs[0].T.to_dict(),
-            'data_baseline': dfs[1].T.to_dict(),
-            'genes': dfs[0].index.tolist(),
-            'genes_baseline': dfs[1].index.tolist(),
-            'celltypes': dfs[0].columns.tolist(),
-            'celltypes_baseline': dfs[1].columns.tolist(),
-            'genes_hierarchical': genes_hierarchical,
-            'celltypes_hierarchical': celltypes_hierarchical,
-            'genes_hierarchical_baseline': genes_hierarchical_baseline,
-            'gene_ids': gene_ids,
-            'species': species,
-            'species_baseline': species_baseline,
+        return {
+            'data': {},  # TODO
+            'celltypes': [],
+            'celltypes_hierarchical': [],
+            'speciess': list(speciess),
+            'speciess_hierarchical': [],
+            'feature_type': feature_type,
+            'tissue': tissue,
         }
-        return heatmap_data
+
+        ## Get hierarchical clustering of cell types
+        ## NOTE: both dfs have the same celltypes (see above note)
+        #new_order = leaves_list(linkage(
+        #            pdist(df.values.T),
+        #            optimal_ordering=True,
+        #            ))
+        #celltypes_hierarchical = df.columns[new_order].tolist()
+
+        ## Gene hyperlinks (they hold for both)
+        #gene_ids = get_gene_ids(df.index, species)
+
+        ## Inject dfs into template
+        ## NOTE: the whole converting DataFrame to dict of dict makes this quite
+        ## a bit more heavy than it should be... just use a list of lists and
+        ## accompanying lists of indices
+        #result = {
+        #    'data': dfs[0].T.to_dict(),
+        #    'data_baseline': dfs[1].T.to_dict(),
+        #    'genes': dfs[0].index.tolist(),
+        #    'genes_baseline': dfs[1].index.tolist(),
+        #    'celltypes': dfs[0].columns.tolist(),
+        #    'celltypes_baseline': dfs[1].columns.tolist(),
+        #    'genes_hierarchical': genes_hierarchical,
+        #    'celltypes_hierarchical': celltypes_hierarchical,
+        #    'genes_hierarchical_baseline': genes_hierarchical_baseline,
+        #    'gene_ids': gene_ids,
+        #    'species': species,
+        #    'species_baseline': species_baseline,
+        #}
+        #return result
 
 
 class PlotsForSeachGenes(Resource):

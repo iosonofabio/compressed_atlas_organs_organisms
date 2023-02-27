@@ -392,72 +392,23 @@ def plot_barplot_GSEA():
 @app.route("/species_comparison_1feature", methods=["GET"])
 def measurement_species_comparison_1feature():
     '''Compare measurement across multiple species'''
-    from scipy.cluster.hierarchy import linkage, leaves_list
-    from scipy.spatial.distance import pdist
-
+    feature = request.args.get('feature')
+    if feature is None:
+        feature = config['defaults']['gene']
     tissue = request.args.get('tissue')
-    species_baseline = request.args.get('species_baseline')
-    feature = request.args.get('genes').split(',')
+    if tissue is None:
+        tissue = config['defaults']['tissue']
+    species_orig = request.args.get('species')
+    if species_orig is None:
+        species_orig = config['defaults']['species']
 
-    # Get the counts
-    # NOTE: this function restricts to the intersection of cell types,
-    # which makes the hierarchical clustering easy. In summary, both
-    # genes and cell types are fully synched now
-    dfs = get_data_species_comparison(species, species_baseline, genes)
-
-    # Hierarchical clustering
-    df = np.log10(dfs[0] + 0.5)
-
-    # Get hierarchical clustering of genes
-    if len(genes) > 2:
-        new_order = leaves_list(linkage(
-                    pdist(df.values),
-                    optimal_ordering=True,
-                    ))
-        genes_hierarchical = df.index[new_order].tolist()
-        genes_hierarchical_baseline = dfs[1].index[new_order].tolist()
-    else:
-        genes_hierarchical = dfs[0].index.tolist()
-        genes_hierarchical_baseline = dfs[1].index.tolist()
-
-    # Get hierarchical clustering of cell types
-    # NOTE: both dfs have the same celltypes (see above note)
-    new_order = leaves_list(linkage(
-                pdist(df.values.T),
-                optimal_ordering=True,
-                ))
-    celltypes_hierarchical = df.columns[new_order].tolist()
-
-    # Gene hyperlinks (they hold for both)
-    gene_ids = get_gene_ids(df.index, species)
-
-    # Inject dfs into template
-    # NOTE: the whole converting DataFrame to dict of dict makes this quite
-    # a bit more heavy than it should be... just use a list of lists and
-    # accompanying lists of indices
-    heatmap_data = {
-        'data': dfs[0].T.to_dict(),
-        'data_baseline': dfs[1].T.to_dict(),
-        'genes': dfs[0].index.tolist(),
-        'genes_baseline': dfs[1].index.tolist(),
-        'celltypes': dfs[0].columns.tolist(),
-        'celltypes_baseline': dfs[1].columns.tolist(),
-        'genes_hierarchical': genes_hierarchical,
-        'celltypes_hierarchical': celltypes_hierarchical,
-        'genes_hierarchical_baseline': genes_hierarchical_baseline,
-        'gene_ids': gene_ids,
-        'species': species,
-        'species_baseline': species_baseline,
-    }
-
-    # Set search string
-    searchstring = ','.join(dfs[0].index)
+    searchstring = feature
 
     return render_template(
-        'heatmap_species_comparison.html',
-        species=species,
-        heatmapData=heatmap_data,
+        'measurement_species_comparison_1feature.html',
         searchstring=searchstring,
+        species=species_orig,
+        tissue=tissue,
     )
 
 
@@ -492,7 +443,8 @@ app_api.add_resource(FeaturesCorrelated, "/data/features_correlated")
 app_api.add_resource(FeaturesNearby, "/data/features_nearby")
 app_api.add_resource(GenesInGOTerm, "/data/genes_in_go_term")
 app_api.add_resource(MeasurementDifferential, "/data/differential")
-app_api.add_resource(MeasurementSpeciesComparison, "/data/speciescomparison")
+app_api.add_resource(MeasurementSpeciesComparison1Feature,
+                     "/data/speciescomparison_1feature")
 app_api.add_resource(CheckGenenames, "/check_genenames")
 app_api.add_resource(MarkerGenes, "/data/marker_genes")
 app_api.add_resource(CelltypeAbundance, "/data/celltype_abundance")

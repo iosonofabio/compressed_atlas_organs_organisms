@@ -1,151 +1,136 @@
+import { dotPlotSizeToFrac, dotPlotFracToSize, getDomains, getPseudocount, getTickTexts } from './plotUtils.js';
+
 // Plot heatmap by celltype as a callback for the AJAX request
 // Use global variables to store persistent data
-function HeatmapSpeciesComparison(result, html_element_id, dataScale, order) {
-    if (!result) {
-        alert("Error: Nothing to plot or gene names invalid")
-        return;
-    }
+var plotData = {};
+
+function plotMeasurementSpeciesComparison1Feature(
+    result,
+    dataScale,
+    tableOrder,
+    heatDot) {
+
+    let htmlElementId = 'plotDiv';
+    let htmlElement = document.getElementById(htmlElementId);
 
     let x_axis, y_axis;
-    if (order == "original") {
-        x_axis = result['celltypes'];
-        if ((dataScale == "originalBaseline") | (dataScale == "log10Baseline")) {
-            y_axis = result['genes_baseline'];
-        } else {
-            y_axis = result['genes'];
-        }
+    if (tableOrder == "original") {
+        y_axis = result['celltypes'];
+        x_axis = result['speciess'];
     } else {
-        x_axis = result['celltypes_hierarchical'];
-        if ((dataScale == "originalBaseline") | (dataScale == "log10Baseline")) {
-            y_axis = result['genes_hierarchical_baseline'];
-        } else {
-            y_axis = result['genes_hierarchical'];
-        }
-    }
-    var ngenes =  y_axis.length;
-    var graph_width = 1300;
-    var graph_height = 370 + 26 * ngenes;
-
-    // Add hyperlinks to gene names
-    let yticktext = [];
-    for (let i = 0; i < y_axis.length; i++) {
-        const gene = result['genes'][i];
-        const geneId = result['gene_ids'][gene];
-        if (geneId === "") {
-            yticktext.push(gene);
-        } else {
-            let geneUrl = gene;
-            if (geneId.startsWith('MGI')) {
-                geneUrl = 'http://www.informatics.jax.org/marker/'+geneId;
-            } else {
-                geneUrl = 'https://www.genecards.org/cgi-bin/carddisp.pl?gene='+geneId;
-            }
-            const tickText = '<a href="'+geneUrl+'">'+gene+'</a>'
-            yticktext.push(tickText);
-        }
+        y_axis = result['celltypes_hierarchical'];
+        x_axis = result['speciess_hierarchical'];
     }
 
-    // Fill heatmap data
-    let data_content = [];
+    let longestXlabel = 0, longestYlabel = 0;
+    for (let i=0; i < y_axis.length; i++) {
+        longestYlabel = Math.max(longestYlabel, result['celltypes'][i].length);
+    }
+    for (let i=0; i < x_axis.length; i++) {
+        longestXlabel = Math.max(longestXlabel, result['speciess'][i].length);
+    }
+
+    let ncelltypes = y_axis.length;
+    let nspecies = x_axis.length;
+    let pxCell = 40, pxChar = 4.4, plotGap = 10;
+    let ytickMargin = 85 + pxChar * longestYlabel;
+    let xtickMargin = 15 + pxChar * longestXlabel;
+    let graphWidth = ytickMargin + pxCell * ncelltypes + 60;
+    let dendrographHeight = 50;
+    let graphHeight = pxCell * ncelltypes + dendrographHeight + plotGap + xtickMargin;
+
+    let yAxisDomains = [
+        [0, 1.0 * (pxCell * ncelltypes) / graphHeight],
+        [1.0 * (pxCell * ncelltypes + plotGap) / graphHeight, 1.0],
+    ];
+
+    // Fill trace data
+    let zs = [];
     for (let i = 0; i < y_axis.length; i++) {
-        const gene = y_axis[i];
-        const geneBaseline = result['genes_baseline'][i];
-        data_content.push([]);
+        const celltype = y_axis[i];
+        zs.push([]);
         for (let j = 0; j < x_axis.length; j++) {
-            const ct = x_axis[j];
-            let geneExp;
+            const spec = x_axis[j];
+            let measurement;
             if (dataScale == "original") {
-                geneExp = result['data'][gene][ct];
-            } else if (dataScale == "log10") {
-                geneExp = Math.log10(result['data'][gene][ct] + 0.5);
-            } else if (dataScale == "log2FC") {
-                geneExp = result['data'][gene][ct];
-                let geneExpBaseline = result['data_baseline'][geneBaseline][ct];
-                geneExp = Math.log2(geneExp + 0.5) - Math.log2(geneExpBaseline + 0.5);
-            } else if (dataScale == "originalBaseline") {
-                geneExp = result['data_baseline'][gene][ct];
-            } else if (dataScale == "log10Baseline") {
-                geneExp = Math.log10(result['data_baseline'][gene][ct] + 0.5);
+                measurment = result['data'][celltype][spec];
+            } else {
+                let pseudoCount = getPseudocount(result['feature_type']);
+                measurement = Math.log10(result['data'][celltype][spec] + pseudoCount);
             }
-            data_content[i].push(geneExp);
+            zs[i].push(measurement);
         }
     }
 
-    let title;
-    if (dataScale == "log2FC") {
-        title = 'Differential expression '+heatmapData['species']+' vs '+heatmapData['species_baseline'];
-    } else if ((dataScale == "originalBaseline") | (dataScale == "log10Baseline")) {
-        title = 'Expression in '+heatmapData['species_baseline'];
-    } else {
-        title = 'Expression in '+heatmapData['species'];
+    // Layout for plotly
+    let layout = {
+        autosize: true,
+        width: graph_width,
+        height: graph_height,
+        title: title,
+        xaxis: {
+            //title: 'Cell types',
+            automargin: true,
+            tickangle: 70,
+            scaleanchor: 'y',
+            scaleratio: 1,
+            type: 'category',
+        },
+        yaxis: {
+            //title: 'Genes',
+            automargin: true,
+            autorange: "reversed",
+            type: 'category',
+            tickvals: y_axis,
+            ticktext: yticktext,
+        },
+    };
+
+    // Config for plotly
+    let config = {
+      scrollZoom: false,
+      editable: false,
+      staticPlot: false,
+      responsive: true,
+      modeBarButtonsToRemove: ['toImage'],
+      modeBarButtonsToAdd: [
+        {
+          name: 'Download plot as a PNG',
+          icon: Plotly.Icons.camera,
+          click: function(gd) {
+            Plotly.downloadImage(gd, {format: 'png'})
+          }
+        },
+        {
+          name: 'Download plot as an SVG',
+          icon: Plotly.Icons.camera,
+          click: function(gd) {
+            Plotly.downloadImage(gd, {format: 'svg'})
+          }
+        },
+      ],
     }
 
-    var data = {
-            type: 'heatmap',
-            hoverongaps: false,
+    // Trace for plotly
+    let trace = {
+        type: 'heatmap',
+        hoverongaps: false,
+        z: zs,
+        x: x_axis,
+        y: y_axis,
     }
     if (dataScale === "log2FC") {
-        data['colorscale'] = 'RdBu';
-        data['zmid'] = 0;
+        trace['colorscale'] = 'RdBu';
+        trace['zmid'] = 0;
     } else {
-        data['colorscale'] = 'Reds';
-        data['zmid'] = '';
+        trace['colorscale'] = 'Reds';
+        trace['zmid'] = '';
     }
 
-    // Make new plot if none is present
-    if ($('#'+html_element_id).html() === "") {
-        data['z'] = data_content;
-        data['x'] = x_axis;
-        data['y'] = y_axis;
-
-        var layout = {
-            autosize: true,
-            width: graph_width,
-            height: graph_height,
-            title: title,
-            xaxis: {
-                //title: 'Cell types',
-                automargin: true,
-                tickangle: 70,
-                scaleanchor: 'y',
-                scaleratio: 1,
-                type: 'category',
-            },
-            yaxis: {
-                //title: 'Genes',
-                automargin: true,
-                autorange: "reversed",
-                type: 'category',
-                tickvals: y_axis,
-                ticktext: yticktext,
-            },
-        };
-            
-        Plotly.newPlot(
-            document.getElementById(html_element_id),
-            [data],
-            layout,
-        ); 
-
-    // Update existing plot if present
+    if ($('#'+htmlElementId).html() === "") {
+        Plotly.newPlot(htmlElement, [trace], layout, config); 
     } else {
-        data['z'] = [data_content];
-        data['x'] = [x_axis];
-        data['y'] = [y_axis];
-        Plotly.update(
-            document.getElementById(html_element_id),
-            data,
-            {
-                height: graph_height,
-                title: title,
-                yaxis: {
-                    autorange: "reversed",
-                    tickvals: y_axis,
-                    ticktext: yticktext,
-                },
-            },
-            [0],
-        ); 
+        Plotly.react(htmlElement, [trace], layout, config); 
     }
 } 
 
@@ -162,17 +147,16 @@ function updatePlot() {
     } else if ($("#logBaselineTab").hasClass('is-active')) {
         dataScale = "log10Baseline";
     }
-    let celltypeOrder = "original";
+    let tableOrder = "original";
     if (!$("#originalOrderTab").hasClass('is-active')) {
-        celltypeOrder = "hierarchical";
+        tableOrder = "hierarchical";
     }
 
-    // NOTE: heatmapData is the global persistent object
-    HeatmapSpeciesComparison(
-        heatmapData, 
-        "h5_data_plot",
+    // NOTE: plotData is the global persistent object
+    plotMeasurementSpeciesComparison1Feature(
+        plotData, 
         dataScale,
-        celltypeOrder,
+        tableOrder,
     );
 }
 
@@ -181,14 +165,14 @@ function updatePlot() {
 // Col1a1,Fsd1l
 function AssembleAjaxRequest() {
     // Get the list of genes to plot from the search box
-    let geneNames = $('#searchGeneName').val();
+    let feature = $('#searchGeneName').val();
     // NOTE: you cannot cache the genes because the hierarchical clustering
     // will differ anyway
 
     let requestData = {
-        genes: geneNames,
+        feature: feature,
+        tissue: tissue,
         species: species,
-        species_baseline: heatmapData['species_baseline'],
     }
 
     // sent conditions and gene names to the API
@@ -198,12 +182,8 @@ function AssembleAjaxRequest() {
         data: $.param(requestData),
         dataType:'json',
         success: function(result) {
-            // Clear mobile DOM elements
-            $("#h5_data_plot").html("");
-
-            heatmapData = result;
+            plotData = result;
             updatePlot();
-
         },
         error: function (e) {
             console.log(e);
