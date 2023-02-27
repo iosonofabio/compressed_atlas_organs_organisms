@@ -28,7 +28,7 @@ pathways:
 defaults:
   tissue: "Lung"
   species: "mouse"
-  celltype: "Vent"
+  celltype: "B"
   gene: "Actb"
   genestring: "Actc1,Actn2,Myl2,Myh7,Col1a1,Col2a1,Pdgfrb,Pecam1,Gja5,Vwf,Ptprc,Ms4a1,Gzma,Cd3d,Cd68,Epcam"
 

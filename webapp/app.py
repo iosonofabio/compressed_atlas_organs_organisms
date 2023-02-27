@@ -389,9 +389,9 @@ def plot_barplot_GSEA():
         )
 
 
-@app.route("/species_comparison_1feature", methods=["GET"])
+@app.route("/species_comparison/1feature", methods=["GET"])
 def measurement_species_comparison_1feature():
-    '''Compare measurement across multiple species'''
+    '''Compare measurement across multiple species, one feature'''
     feature = request.args.get('feature')
     if feature is None:
         feature = config['defaults']['gene']
@@ -410,6 +410,33 @@ def measurement_species_comparison_1feature():
         species=species_orig,
         tissue=tissue,
     )
+
+
+@app.route("/species_comparison/1celltype", methods=["GET"])
+def measurement_species_comparison_1celltype():
+    '''Compare measurement across multiple species, one cell type'''
+    celltype = request.args.get('celltype')
+    if celltype is None:
+        celltype = config['defaults']['celltype']
+    tissue = request.args.get('tissue')
+    if tissue is None:
+        tissue = config['defaults']['tissue']
+    species_orig = request.args.get('species')
+    if species_orig is None:
+        species_orig = config['defaults']['species']
+
+    featurestring = request.args.get("featurestring")
+    if featurestring is None:
+        featurestring = config['defaults']['genestring']
+
+    return render_template(
+        'measurement_species_comparison_1celltype.html',
+        searchstring=featurestring,
+        species=species_orig,
+        tissue=tissue,
+        celltype=celltype,
+    )
+
 
 
 # Static assets (JS/CSS)
