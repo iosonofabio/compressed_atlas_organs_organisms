@@ -35,7 +35,7 @@ function plotMeasurementSpeciesComparison1Feature(
     let pxCell = 40, pxChar = 4.4, plotGap = 10;
     let ytickMargin = 85 + pxChar * longestYlabel;
     let xtickMargin = 15 + pxChar * longestXlabel;
-    let graphWidth = ytickMargin + pxCell * ncelltypes + 60;
+    let graphWidth = ytickMargin + pxCell * nspecies + 60;
     let dendrographHeight = 50;
     let graphHeight = pxCell * ncelltypes + dendrographHeight + plotGap + xtickMargin;
 
@@ -46,17 +46,17 @@ function plotMeasurementSpeciesComparison1Feature(
 
     // Fill trace data
     let zs = [];
+    let measurement;
     for (let i = 0; i < y_axis.length; i++) {
         const celltype = y_axis[i];
         zs.push([]);
         for (let j = 0; j < x_axis.length; j++) {
             const spec = x_axis[j];
-            let measurement;
             if (dataScale == "original") {
-                measurment = result['data'][celltype][spec];
+                measurement = result['data'][spec][celltype];
             } else {
                 let pseudoCount = getPseudocount(result['feature_type']);
-                measurement = Math.log10(result['data'][celltype][spec] + pseudoCount);
+                measurement = Math.log10(result['data'][spec][celltype] + pseudoCount);
             }
             zs[i].push(measurement);
         }
@@ -65,24 +65,19 @@ function plotMeasurementSpeciesComparison1Feature(
     // Layout for plotly
     let layout = {
         autosize: true,
-        width: graph_width,
-        height: graph_height,
-        title: title,
+        width: graphWidth,
+        height: graphHeight,
         xaxis: {
-            //title: 'Cell types',
             automargin: true,
-            tickangle: 70,
+            tickangle: 90,
             scaleanchor: 'y',
             scaleratio: 1,
             type: 'category',
         },
         yaxis: {
-            //title: 'Genes',
             automargin: true,
             autorange: "reversed",
             type: 'category',
-            tickvals: y_axis,
-            ticktext: yticktext,
         },
     };
 
@@ -165,7 +160,7 @@ function updatePlot() {
 // Col1a1,Fsd1l
 function AssembleAjaxRequest() {
     // Get the list of genes to plot from the search box
-    let feature = $('#searchGeneName').val();
+    let feature = $('#searchFeatures').val();
     // NOTE: you cannot cache the genes because the hierarchical clustering
     // will differ anyway
 
@@ -178,7 +173,7 @@ function AssembleAjaxRequest() {
     // sent conditions and gene names to the API
     $.ajax({
         type:'GET',
-        url:'/data/speciescomparison',
+        url:'/data/speciescomparison_1feature',
         data: $.param(requestData),
         dataType:'json',
         success: function(result) {
@@ -193,21 +188,6 @@ function AssembleAjaxRequest() {
 
 };
 
-
-// On search click, keep the same conditions but change the genes
-$("#searchOnClick").click(function() {
-  // action here when clicking the search button
-  AssembleAjaxRequest();
-});
-$("body").keyup(function(event) {
-    if (event.keyCode === 13) {
-        $("#searchOnClick").click();
-    }
-});
-
-// On load, the heatmap data are already embedded in the template
-$(document).ready(updatePlot);
-
 // normalization
 $(".dataScaleButton" ).click(function() {
     $(".dataScaleButton").removeClass('is-active');
@@ -219,4 +199,16 @@ $(".dataOrderButton" ).click(function() {
     $(".dataOrderButton").removeClass('is-active');
     $(this).addClass('is-active');
     updatePlot();
+});
+
+// Search
+$("#searchOnClick").click(function() { AssembleAjaxRequest() });
+$("body").keyup(function(event) {
+    if (event.keyCode === 13) {
+        $("#searchOnClick").click();
+    }
+});
+
+$(document).ready(function() {
+    AssembleAjaxRequest();
 });

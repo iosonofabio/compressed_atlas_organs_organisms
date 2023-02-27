@@ -1,6 +1,58 @@
 {% extends 'base.html' %}
 {% block content %}
 
+  <div class="columns is-mobile is-centered tab-area">
+    <div id="suggestions">
+      <span id="suggestionsHeader">Suggestions:</span>
+      <span class="suggestGroup" id="similarSuggestions">
+        Similar:
+        {% if "gene_expression" in feature_types %}
+        <span class="suggestButton" id="geneSimilar">Genes</span>
+        {% endif %}
+        {% if "chromatin_accessibility" in feature_types %}
+        <span class="suggestButton" id="regionSimilar">Regions</span>
+        {% endif %}
+      </span>
+      {% if "chromatin_accessibility" in feature_types %}
+      <span class="suggestGroup" id="nearbySuggestions">
+        Nearby:
+        {% if "gene_expression" in feature_types %}
+        <span class="suggestButton" id="geneNearby">Genes</span>
+        {% endif %}
+        <span class="suggestButton" id="regionNearby">Regions</span>
+      </span>
+      {% endif %}
+      {% if tissues != [tissue] %}
+      <span class="suggestGroup" id="tissueSuggestions">
+        <span>Other tissues:</span>
+        <span>
+          <div class="dropdown is-hoverable">
+            <div class="dropdown-trigger">
+              <button class="button" aria-haspopup="false" aria-controls="dropdown-menu">
+                <span id="tissueSuggestionActive">{{ tissue }}</span>
+                <span class="icon is-small">
+                  <i class="fas fa-angle-down" aria-hidden="true"></i>
+                </span>
+              </button>
+            </div>
+            <div class="dropdown-menu" id="dropdown-menu" role="menu">
+              <div class="dropdown-content">
+                {% for tiss in tissues %}
+                <a id="suggest{{ tiss }}" href="#" class="dropdown-item suggestButton tissueSuggestion">
+                  <span class=tissueIcon><img width="30px" src="/static/images/tissue_icons/{{ tiss }}.svg"></span><span class="tissueText">{{ tiss }}</span>
+                </a>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+        </span>
+      </span>
+      {% endif %}
+    </div>
+  </div>
+
+
+
   <div class="columns is-mobile is-centered tab-area plotButtons" style="margin: 0px;">
     <div class="field column is-one-quarter">
       <label class="label">Data values</label>

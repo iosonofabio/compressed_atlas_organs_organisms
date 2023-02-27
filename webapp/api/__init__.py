@@ -4,6 +4,7 @@ from flask_restful import Resource
 
 # Data import
 import numpy as np
+import pandas as pd
 from scipy.cluster.hierarchy import linkage, leaves_list
 from scipy.spatial.distance import pdist
 
@@ -482,10 +483,9 @@ class MeasurementSpeciesComparison1Feature(Resource):
     '''Comparison between species'''
     def get(self):
         tissue = request.args.get('tissue')
-        feature = request.args.get('feature').split(',')
+        feature = request.args.get('feature')
         species_orig = request.args.get('species')
         feature_type = 'gene_expression'
-
 
         # Get the counts
         # NOTE: this function restricts to the intersection of cell types,
@@ -493,7 +493,8 @@ class MeasurementSpeciesComparison1Feature(Resource):
         # genes and cell types are fully synched now
         speciess = get_speciess()
 
-        dfd = {}
+        featured = {}
+        dfs = []
         for species in speciess:
             if species == species_orig:
                 feature_orth = feature
@@ -502,6 +503,8 @@ class MeasurementSpeciesComparison1Feature(Resource):
                     [feature], species_orig, species,
                 )[species][0]
 
+            featured[species] = feature_orth
+
             df = get_counts(
                     "celltype",
                     feature_type=feature_type,
@@ -509,52 +512,35 @@ class MeasurementSpeciesComparison1Feature(Resource):
                     species=species,
                     tissue=tissue,
                     missing='throw',
-                    )
+                    ).loc[feature_orth]
+            df.name = species
+            dfs.append(df)
 
-            print(df)
+        df = pd.concat(
+                dfs,
+                axis=1,
+            ).fillna(-1)
 
-            dfd[species] = df
+        # Hierarchical clustering of cell types
+        celltypes = list(df.index)
+        if len(celltypes) <= 2:
+            celltypes_hierarchical = celltypes
+        else:
+            idx_ct_hierarchical = leaves_list(linkage(
+                pdist(df.values),
+                optimal_ordering=True),
+            )
+            celltypes_hierarchical = [celltypes[i] for i in idx_ct_hierarchical]
 
         return {
-            'data': {},  # TODO
-            'celltypes': [],
-            'celltypes_hierarchical': [],
-            'speciess': list(speciess),
-            'speciess_hierarchical': [],
+            'data': df.to_dict(),
+            'celltypes': celltypes,
+            'celltypes_hierarchical': celltypes_hierarchical,
+            'speciess': df.columns.tolist(),
+            'speciess_hierarchical': df.columns.tolist(),  # TODO
             'feature_type': feature_type,
             'tissue': tissue,
         }
-
-        ## Get hierarchical clustering of cell types
-        ## NOTE: both dfs have the same celltypes (see above note)
-        #new_order = leaves_list(linkage(
-        #            pdist(df.values.T),
-        #            optimal_ordering=True,
-        #            ))
-        #celltypes_hierarchical = df.columns[new_order].tolist()
-
-        ## Gene hyperlinks (they hold for both)
-        #gene_ids = get_gene_ids(df.index, species)
-
-        ## Inject dfs into template
-        ## NOTE: the whole converting DataFrame to dict of dict makes this quite
-        ## a bit more heavy than it should be... just use a list of lists and
-        ## accompanying lists of indices
-        #result = {
-        #    'data': dfs[0].T.to_dict(),
-        #    'data_baseline': dfs[1].T.to_dict(),
-        #    'genes': dfs[0].index.tolist(),
-        #    'genes_baseline': dfs[1].index.tolist(),
-        #    'celltypes': dfs[0].columns.tolist(),
-        #    'celltypes_baseline': dfs[1].columns.tolist(),
-        #    'genes_hierarchical': genes_hierarchical,
-        #    'celltypes_hierarchical': celltypes_hierarchical,
-        #    'genes_hierarchical_baseline': genes_hierarchical_baseline,
-        #    'gene_ids': gene_ids,
-        #    'species': species,
-        #    'species_baseline': species_baseline,
-        #}
-        #return result
 
 
 class PlotsForSeachGenes(Resource):
