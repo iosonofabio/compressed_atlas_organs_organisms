@@ -11,14 +11,11 @@ from .genes import validate_correct_genestr
 def validate_correct_species(text):
     '''Validate species names'''
     text = text.lower().rstrip('s')
-    if text in ('human', 'mouse lemur', 'lemur'):
+    if text in ('human', 'mouse', 'lemur'):
         return text
 
-    if text == 'mouse':
-        return text
-
-    if text == 'monkey':
-        return 'mouse lemur'
+    if text in ('mouse lemur', 'mouselemur', 'monkey'):
+        return 'lemur'
 
     return None
 

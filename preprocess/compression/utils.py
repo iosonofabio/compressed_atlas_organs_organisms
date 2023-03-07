@@ -23,6 +23,9 @@ def get_tissue_data_dict(atlas_folder, rename_dict):
         # TS
         if tissue.startswith('TS_'):
             tissue = tissue[3:]
+        # TMC
+        if tissue.endswith('_hvg'):
+            tissue = tissue[:-len('_FIRM_hvg')].replace('_', ' ').title()
 
         tissue = rename_dict['tissues'].get(tissue, tissue)
         result.append({
@@ -101,13 +104,29 @@ def subannotate(adata, species, annotation, verbose=True):
             'monocyte': ['Psap', 'Cd14'],
             'neutrophil': ['S100a8', 'S100a9', 'Stfa1', 'Stfa2'],
         },
+        ('mouselemur', 'lymphocyte'): {
+            'B': ['MS4A1', 'CD79A', 'CD79B', 'CD19'],
+            'T': ['TRAC', 'CD3E', 'CD3D', 'CD3G'],
+            'NK': ['GZMA', 'NCAM1', 'FCER1G', 'GZMK', 'KLRB1'],
+            'macrophage': ['C1QA', 'CD68', 'MARCO', 'CST3'],
+            'monocyte': ['PSAP', 'CD14'],
+            'neutrophil': ['S100A8', 'S100A9', 'STFA1', 'STFA2'],
+            'erythrocyte': ['BETA-S', 'ALAS2', 'HBB-B2', 'TMEM14C'],
+            '': ['SNRPF'],
+        },
     }
 
     bad_prefixes = {
         'mouse': ['Rpl', 'Rps', 'Linc', 'Mt'],
-        'human': ['RPL', 'RPS', 'LINC', 'MT', 'EPAS1', 'DYNLL1',
-                  'EIF3G', 'HLA-A', 'HLA-B', 'HLA-C', 'HLA-E',
-                  'GZMA', 'GNLY', 'CD74', 'KRT4', 'TYROBP'],
+        'human': [
+            'RPL', 'RPS', 'LINC', 'MT', 'EPAS1', 'DYNLL1',
+            'EIF3G', 'HLA-A', 'HLA-B', 'HLA-C', 'HLA-E',
+            'GZMA', 'GNLY', 'CD74', 'KRT4', 'TYROBP'],
+        'mouselemur': [
+            'RPL', 'RPS', 'LINC', 'MT', 'EPAS1', 'DYNLL1',
+            'EIF3G', 'HLA-A', 'HLA-B', 'HLA-C', 'HLA-E',
+            'GZMA', 'GNLY', 'CD74', 'KRT4', 'TYROBP',
+            'UBA52', 'LOC1', 'MYBL2', 'MAL', 'ATP5A1', 'ARHGAP15'],
     }
 
     markersi = markers.get((species, annotation), None)
@@ -171,9 +190,23 @@ def subannotate(adata, species, annotation, verbose=True):
     return new_annotations
 
 
-def fix_annotations(adata, column, species, rename_dict, coarse_cell_types):
+def fix_annotations(adata, column, species, tissue, rename_dict, coarse_cell_types):
     '''Correct cell types in each tissue according to known dict'''
+    blacklist = {
+        ('mouselemur', 'Bone Marrow'): ['lymphocyte', 'type II pneumocyte'],
+        ('mouselemur', 'Heart'): ['type II pneumocyte'],
+        ('mouselemur', 'Kidney'): ['stromal cell', 'urothelial cell'],
+        ('mouselemur', 'Lung'): ['epithelial cell of uterus'],
+        ('mouselemur', 'Pancreas'): ['stromal cell', 'pancreatic endocrine cell'],
+        ('mouselemur', 'Tongue'): ['stromal cell', 'pancreatic endocrine cell'],
+    }
+
     celltypes_new = np.asarray(adata.obs[column]).copy()
+
+    # Exclude blacklisted
+    if (species, tissue) in blacklist:
+        for ctraw in blacklist[(species, tissue)]:
+            celltypes_new[celltypes_new == ctraw] = ''
 
     # Rename according to standard dict
     for ctraw, celltype in rename_dict['cell_types'].items():

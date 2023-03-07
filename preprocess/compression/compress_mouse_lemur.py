@@ -2,229 +2,356 @@
 '''
 author:     Fabio Zanini
 date:       16/05/22
-content:    Compress mouse lemur atlas, heart.
+content:    Compress Tabula Microcebus.
 '''
 import os
 import sys
+import pathlib
+import gzip
+import h5py
 import numpy as np
 import pandas as pd
-import h5py
+
 import anndata
+import scanpy as sc
+
+from utils import (
+    get_tissue_data_dict,
+    subannotate,
+    fix_annotations,
+    get_celltype_order,
+    collect_gene_annotations,
+    store_compressed_atlas,
+    )
 
 
-data_fdn = '../webapp/static/scData/'
+root_repo_folder = pathlib.Path(__file__).parent.parent.parent
+tmc_data_folder = root_repo_folder / 'data' / 'full_atlases' / 'tabula_microcebus'
+anno_fn = root_repo_folder / 'data' / 'gene_annotations' / 'Microcebus_murinus.Mmur_3.0.109.gtf.gz'
+webapp_fdn = root_repo_folder / 'webapp'
+output_fdn = webapp_fdn / 'static' / 'atlas_data'
+fn_out = output_fdn / 'tabula_microcebus.h5'
 
 
-def correct_annotations(adata, column):
-    '''Overwrite annotations for macrophages and DCs'''
-    annotations = pd.read_csv(
-        '../data/tabula_microcebus/reannotations.tsv',
-        sep='\t',
-        index_col=0,
-    ).squeeze(axis=1)
-    annotations = pd.Series(annotations, dtype='category')
+rename_dict = {
+    'tissues': {
+    },
+    'cell_types': {
+        'erythroid lineage cell': 'erythroid',
+        'unassigned': 'unknown',
+        'erythroid progenitor cell': 'erythroid',
+        'CD4-positive, alpha-beta T cell': 'T',
+        'CD8-positive, alpha-beta T cell': 'T',
+        'B cell': 'B',
+        'hematopoietic precursor cell': 'hematopoietic',
+        'natural killer cell': 'NK',
+        'granulocyte monocyte progenitor cell': 'granulocytopoietic',
+        'mature NK T cell': 'NK',
+        'T cell': 'T',
+        'myeloid cell': 'unknown',  # TODO
+        'plasmacytoid dendritic cell': 'plasmacytoid',
+        'megakaryocyte progenitor cell': 'megakaryocyte-erythroid',
+        'dendritic cell': 'dendritic',
+        'endothelial cell of sinusoid': 'capillary',
+        'conventional dendritic cell': 'dendritic',
+        'fat cell': 'adipocyte',
+        'enterocyte of epithelium of large intestine': 'enterocyte',
+        'epithelial cell of large intestine': 'epithelial',
+        'mesothelial cell': 'mesothelial',
+        'large intestine goblet cell': 'goblet',
+        'intestinal enteroendocrine cell': 'enteroendocrine',
+        'cell': 'unknown',
+        'vascular associated smooth muscle cell': 'vascular smooth muscle',
+        'endothelial cell': 'capillary',
+        'regular ventricular cardiac myocyte': 'cardiomyocyte',
+        'pericyte cell': 'pericyte',
+        'regular atrial cardiac myocyte': 'cardiomyocyte',
+        'endothelial cell of lymphatic vessel': 'lymphatic',
+        'Purkinje myocyte': 'cardiomyocyte',
+        'mesothelial cell of epicardium': 'mesothelial',
+        'nodal myocyte': 'cardiomyocyte',
+        'vasa recta ascending limb cell': 'capillary',
+        'vasa recta descending limb cell': 'capillary',
+        'kidney proximal convoluted tubule epithelial cell': 'proximal tubule epi',
+        'kidney loop of Henle thin descending limb epithelial cell': 'Henle limb epi',
+        'kidney loop of Henle thick ascending limb epithelial cell': 'Henle limb epi',
+        'kidney loop of Henle thin ascending limb epithelial cell': 'Henle limb epi',
+        'kidney proximal straight tubule epithelial cell': 'proximal tubule epi',
+        'renal alpha-intercalated cell': 'intercalated',
+        'renal beta-intercalated cell': 'intercalated',
+        'glomerular endothelial cell': 'glomerular',
+        'capillary endothelial cell': 'capillary',
+        'epithelial cell of proximal tubule': 'proximal tubule epi',
+        'renal principal cell': 'principal',
+        'myofibroblast cell': 'myofibroblast',
+        'kidney distal convoluted tubule epithelial cell': 'distal tubule epi',
+        'macula densa epithelial cell': 'macula densa',
+        'kidney collecting duct cell': 'collecting duct epi',
+        'renal intercalated cell': 'intercalated',
+        'innate lymphoid cell': 'innate lymphoid',
+        'kidney loop of Henle epithelial cell': 'Henle limb epi',
+        'reticular cell': 'reticular',
+        'non-myelinating Schwann cell': 'schwann',
+        'type II pneumocyte': 'AT2 epi',
+        'fibroblast of lung': 'fibroblast',
+        'type I pneumocyte': 'AT1 epi',
+        'endothelial cell of artery': 'arterial',
+        'vein endothelial cell': 'venous',
+        'lung ciliated cell': 'ciliated',
+        'brush cell of bronchus': 'brush',
+        'club cell': 'club',
+        'basal cell of epithelium of bronchus': 'basal',
+        'myelinating Schwann cell': 'schwann',
+        'pancreatic acinar cell': 'acinar',
+        'pancreatic ductal cell': 'ductal',
+        'pancreatic B cell': 'beta',
+        'pancreatic A cell': 'alpha',
+        'pancreatic D cell': 'delta',
+        'pancreatic PP cell': 'PP',
+        'epithelial cell of exocrine pancreas': 'epithelial',
+        'oral mucosa squamous cell': 'squamous',
+        'skeletal muscle satellite stem cell': 'satellite',
+        'tendon cell': 'tendon',
+        'fast muscle cell': 'striated muscle',
+    },
+}
 
-    cats_old = adata.obs[column].cat.categories
-    cats_new = list(set(annotations.cat.categories) - set(cats_old))
-    adata.obs[column] = adata.obs[column].cat.add_categories(cats_new)
-    annotations = annotations.cat.set_categories(adata.obs[column].cat.categories)
+coarse_cell_types = [
+    'endothelial',
+    'immune cell',
+    'lymphocyte',
+]
 
-    adata.obs.loc[annotations.index, column] = annotations
-    adata.obs[column] = adata.obs[column].cat.remove_unused_categories()
+
+celltype_order = [
+    ('immune', [
+        'HSC',
+        'hematopoietic',
+        'neutrophil',
+        'basophil',
+        'eosinophil',
+        'granulocytopoietic',
+        'granulocyte',
+        'mast',
+        'myeloid',
+        'monocyte',
+        'alveolar macrophage',
+        'macrophage',
+        'dendritic',
+        'megakaryocyte-erythroid',
+        'erythroid',
+        'erythrocyte',
+        'platelet',
+        'B',
+        'plasma cell',
+        'T',
+        'NK',
+        'plasmacytoid',
+        'innate lymphoid',
+    ]),
+    ('epithelial', [
+        'epithelial',
+        'goblet',
+        'brush',
+        'crypt',
+        'transit amp',
+        'enterocyte',
+        'paneth',
+        'proximal tubule epi',
+        'distal tubule epi',
+        'podocyte',
+        'Henle limb epi',
+        'collecting duct epi',
+        'AT1 epi',
+        'AT2 epi',
+        'club',
+        'ciliated',
+        'ductal',
+        'acinar',
+        'keratinocyte',
+        'basal',
+        'serous',
+        'mucous',
+        'squamous',
+        'intercalated',
+        'principal',
+        'macula densa',
+        'urothelial',
+    ]),
+    ('endothelial', [
+        'arterial',
+        'venous',
+        'coronary',
+        'capillary',
+        'CAP2',
+        'lymphatic',
+        'glomerular',
+    ]),
+    ('mesenchymal', [
+        'fibroblast',
+        'alveolar fibroblast',
+        'myofibroblast',
+        'cardiomyocyte',
+        'stellate',
+        'tendon',
+        'satellite',
+        'striated muscle',
+        'smooth muscle',
+        'vascular smooth muscle',
+        'pericyte',
+        'mesothelial',
+        'reticular',
+        'preosteoblast',
+        'osteoblast',
+        'adipocyte',
+    ]),
+    ('other', [
+        'neuron',
+        'enteroendocrine',
+        'hepatocyte',
+        'ionocyte',
+        'alpha',
+        'beta',
+        'PP',
+        'delta',
+        'schwann',
+    ]),
+    ('unknown', [
+        'unknown',
+    ])
+]
 
 
 if __name__ == '__main__':
 
-    # Load data
-    print('Load single cell data')
-    fn_atlas = '../data/tabula_microcebus/Heart_FIRM_hvg.h5ad'
-    adata = anndata.read_h5ad(fn_atlas)
+    # Remove existing compressed atlas file if present
+    if os.path.isfile(fn_out):
+        os.remove(fn_out)
 
-    # NOTE: the lemur data is in some weird normalization between 0 and 8.79,
-    # and adata.raw is None. Hmm, there must be a logp1 there, let's try to
-    # undo that transformation by hand. After np.expm1 the sum of each cell is
-    # 10000, so there you go, multiply by 100 and done.
-    adata.X = 100 * np.expm1(adata.X)
+    compressed_atlas = {}
 
-    print('Compress')
-    # Find cell type column
-    column = 'cell_ontology_class_v1'
-    # NOTE: there is a free annotation column that is informative, basically
-    # a higher resolution clustering but with some questionable things like
-    # CD4+ CD8+ T cells. Let's go trad for now
+    tissue_sources = get_tissue_data_dict(tmc_data_folder, rename_dict)
+    tissues = list(tissue_sources.keys())
+    for it, (tissue, full_atlas_fn) in enumerate(tissue_sources.items()):
+        print(tissue)
 
-    print('Reannotate aerocytes, DCs, etc.')
-    correct_annotations(adata, column)
+        adata_tissue = anndata.read(full_atlas_fn)
 
-    # Exclude unassigned/doublets
-    unwanted_types = [
-        'lymphocyte',
-        'unassigned',
-        'epithelial cell of uterus',
-        'mature NK T cell',
-        'endothelial cell',
-        'granulocyte monocyte progenitor cell',
-    ]
-    adata = adata[~adata.obs[column].isin(unwanted_types)]
+        # There is no raw data, but the actual data is log1p of cptt
+        adata_tissue.X = np.expm1(adata_tissue.X)
+        adata_tissue.obs['coverage'] = adata_tissue.obs['nCount_RNA']
 
-    # Set cell type order
-    #celltypes = adata.obs[column].unique()
-    celltypes = [
-        'Mesothelial',
-        'Adventitial FB',
-        'Alveolar FB',
-        'ASM',
-        'VSM',
-        'Pericyte',
-        'Lymphatic',
-        'Arterial II',
-        'Venous',
-        'gCap',
-        'Aerocyte',
-        'Schwann cell',
-        'Plasmablast',
-        'B cell',
-        'NK cell',
-        'T cell',
-        'IL cell',
-        'pDC',
-        'DC I',
-        'DC II',
-        'DC III',
-        'Alveolar mac',
-        'Interstitial mac',
-        'Monocyte',
-        'Neutrophil',
-        'Basophil',
-        'Eosinophil',
-        'Platelet',
-        'Alveolar type I',
-        'Alveolar type II',
-        'Ciliated',
-        'Club',
-        'Brush',
-        'Basal',
-    ]
+        # Fix cell type annotations
+        adata_tissue.obs['cellType'] = fix_annotations(
+            adata_tissue, 'cell_ontology_class_v1', 'mouselemur', tissue,
+            rename_dict, coarse_cell_types,
+        )
 
-    # Merge some annotations together
-    annotation_merges = {
-        'Mesothelial': ['mesothelial cell'],
-        'Adventitial FB': ['fibroblast'],
-        'Alveolar FB': ['fibroblast of lung'],
-        # NOTE: they express HHIP, no PDGFRA...
-        'ASM': ['myofibroblast cell'],
-        'VSM': ['vascular associated smooth muscle cell'],
-        'Pericyte': ['pericyte cell'],
-        'Schwann cell': [
-            'myelinating Schwann cell',
-            'non-myelinating Schwann cell',
-        ],
-        'Venous': ['vein endothelial cell'],
-        'gCap': ['capillary endothelial cell'],
-        'Aerocyte': ['Aerocyte'],
-        'Arterial II': ['endothelial cell of artery'],
-        'Lymphatic': ['endothelial cell of lymphatic vessel'],
-        'Plasmablast': ['plasma cell'],
-        'NK cell': ['natural killer cell'],
-        'IL cell': ['innate lymphoid cell'],
-        'B cell': ['B cell'],
-        'T cell': [
-            'T cell',
-            'CD4-positive, alpha-beta T cell',
-            'CD8-positive, alpha-beta T cell',
-        ],
-        'red blood cell lineage': [
-            'erythroid lineage cell',
-            'hematopoietic precursor cell',
-            'erythroid progenitor cell',
-            'megakaryocyte progenitor cell',
-        ],
-        'Alveolar type I': ['type I pneumocyte'],
-        'Alveolar type II': ['type II pneumocyte'],
-        'Ciliated': ['lung ciliated cell'],
-        'Club': ['club cell'],
-        'Brush': ['brush cell of bronchus'],
-        'Basal': ['basal cell of epithelium of bronchus'],
-        'DC I': ['DC I'],
-        'DC II': ['DC II'],
-        'DC III': ['DC III'],
-        'pDC': ['plasmacytoid dendritic cell'],
-        'Alveolar mac': ['alveolar macrophage'],
-        'Interstitial mac': ['macrophage'],
-        'Monocyte': ['monocyte'],
-        'Neutrophil': ['neutrophil'],
-        'Basophil': ['basophil'],
-        'Eosinophil': ['eosinophil'],
-        'Platelet': ['platelet'],
-    }
-    adata.obs[column+'_compressed'] = ''
-    for ct, csts in annotation_merges.items():
-        adata.obs.loc[adata.obs[column].isin(csts), column+'_compressed'] = ct
+        # Correction might declare some cells as untyped/low quality
+        # they have an empty string instead of an actual annotation
+        if (adata_tissue.obs['cellType'] == '').sum() > 0:
+            idx = adata_tissue.obs['cellType'] != ''
+            adata_tissue = adata_tissue[idx]
 
-    # Average, proportion expressing, number of cells
-    genes = adata.var_names
-    avg_exp = pd.DataFrame(
-            np.zeros((len(genes), len(celltypes)), np.float32),
-            index=genes,
-            columns=celltypes)
-    frac_exp = avg_exp.copy()
-    ncells = pd.Series(np.zeros(len(celltypes), np.int64), index=celltypes)
-    for ct in celltypes:
-        # Avg gene expression (compute cptt after averaging)
-        avg_exp[ct] = np.asarray(adata[adata.obs[column+'_compressed'] == ct].X.mean(axis=0))[0]
-        avg_exp[ct] *= 1e4 / avg_exp[ct].sum()
-        # Proportion expressing
-        frac_exp[ct] = np.asarray((adata[adata.obs[column+'_compressed'] == ct].X > 0).mean(axis=0))[0]
-        # Number of cells
-        ncells[ct] = (adata.obs[column+'_compressed'] == ct).sum()
+        celltypes = get_celltype_order(
+            adata_tissue.obs['cellType'].value_counts().index,
+            celltype_order,
+        )
 
-    # Store to file
-    print('Store compressed atlas')
-    fn_out = data_fdn + 'mouselemur_compressed_heart_atlas.h5'
-    with pd.HDFStore(fn_out) as h5_data:
-        h5_data.put('gene_expression/celltype/average', avg_exp.T)
-        h5_data.put('gene_expression/celltype/fraction', frac_exp.T)
-        h5_data.put('gene_expression/celltype/cell_count', ncells)
+        print('Add data to celltype group')
+        genes = adata_tissue.var_names
+        avg_ge = pd.DataFrame(
+                np.zeros((len(genes), len(celltypes)), np.float32),
+                index=genes,
+                columns=celltypes,
+                )
+        frac_ge = pd.DataFrame(
+                np.zeros((len(genes), len(celltypes)), np.float32),
+                index=genes,
+                columns=celltypes,
+                )
+        ncells_ge = pd.Series(
+                np.zeros(len(celltypes), np.int64), index=celltypes,
+                )
+        for celltype in celltypes:
+            idx = adata_tissue.obs['cellType'] == celltype
+            Xidx = adata_tissue[idx].X
+            avg_ge[celltype] = np.asarray(Xidx.mean(axis=0))[0]
+            frac_ge[celltype] = np.asarray((Xidx > 0).mean(axis=0))[0]
+            ncells_ge[celltype] = idx.sum()
 
+        print('Add data to celltype-timepoint group')
+        ages = adata_tissue.obs['age'].value_counts().index.tolist()
+        ages.sort()
+        columns_age = []
+        for ct in celltypes:
+            for age in ages:
+                columns_age.append('_'.join([ct, 'TS', str(age)]))
 
-    print('Compute gene friends')
-    # Compute top correlated genes
-    counts = avg_exp.values.T
-    genes = avg_exp.index
+        # Averages
+        genes = adata_tissue.var_names
+        avg_ge_tp = pd.DataFrame(
+                np.zeros((len(genes), len(celltypes) * len(ages)), np.float32),
+                index=genes,
+                columns=columns_age,
+                )
+        frac_ge_tp = pd.DataFrame(
+                np.zeros((len(genes), len(celltypes) * len(ages)), np.float32),
+                index=genes,
+                columns=columns_age,
+                )
+        ncells_ge_tp = pd.Series(
+                np.zeros(len(columns_age), np.int64), index=columns_age,
+                )
+        for celltype in celltypes:
+            adata_ct = adata_tissue[adata_tissue.obs['cellType'] == celltype]
+            for age in ages:
+                idx_age = (adata_ct.obs['age'] == age).values.nonzero()[0]
+                if len(idx_age) == 0:
+                    continue
+                Xct_age = adata_ct.X[idx_age]
+                label = '_'.join([celltype, 'TMC', str(age)])
+                avg_ge_tp[label] = np.asarray(Xct_age.mean(axis=0))[0]
+                frac_ge_tp[label] = np.asarray((Xct_age > 0).mean(axis=0))[0]
+                ncells_ge_tp[label] = len(idx_age)
 
-    # focus on highly expressed genes
-    idx = counts.max(axis=0) > 30
-    counts = counts[:, idx]
-    genes = genes[idx]
+        compressed_atlas[tissue] = {
+            'features': genes,
+            'celltype': {
+                'avg': avg_ge,
+                'frac': frac_ge,
+                'ncells': ncells_ge,
+            },
+            'celltype_dataset_timepoint': {
+                'avg': avg_ge_tp,
+                'frac': frac_ge_tp,
+                'ncells': ncells_ge_tp,
+            },
+        }
 
-    ngenes = len(genes)
-    mu = counts.mean(axis=0)
-    countsc = counts - mu
-    sigma = counts.std(axis=0)
+    print('Consolidate gene list across tissues')
+    needs_union = False
+    genes = None
+    for tissue, tdict in compressed_atlas.items():
+        genest = list(tdict['features'])
+        if genes is None:
+            genes = genest
+            continue
+        if genest != genes:
+            needs_union = True
+            genes = set(genes) | set(genest)
 
-    friends = {}
-    for i in range(ngenes):
-        if ((i+1) % 100) == 0:
-            print(f'Gene {i+1} out of {ngenes}', end='\r')
-        corr_i = (countsc[:, i] * counts.T).mean(axis=1) / (sigma[i] * sigma.T)
-        corr_i[np.isnan(corr_i)] = 0
-        # Self is always the highest
-        itop = np.argsort(corr_i)[::-1][1:6]
+    if needs_union:
+        raise NotImplementedError('TODO: make union of features')
 
-        # Cutoff at 20%
-        tmp = corr_i[itop]
-        tmp = tmp[tmp >= 0.2]
-        itop = itop[:len(tmp)]
+    print('Add gene annotations')
+    gene_annos = collect_gene_annotations(anno_fn, genes)
 
-        friends_i = genes[itop]
-        friends[genes[i]] = np.array(friends_i)
-    print(f'Gene {i+1} out of {ngenes}')
-
-    print('Store gene friends')
-    output_fn = data_fdn + 'human_gene_friends.h5'
-    with h5py.File(output_fn, 'w') as f:
-        for gene, friends_i in friends.items():
-            lmax = max(len(x) for x in friends_i)
-            friends_i = friends_i.astype('S'+str(lmax))
-            dset = f.create_dataset(gene, data=friends_i)
-
+    print('Store compressed atlas to file')
+    store_compressed_atlas(
+            fn_out,
+            compressed_atlas,
+            tissues,
+            gene_annos,
+            celltype_order,
+    )

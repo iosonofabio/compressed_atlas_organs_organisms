@@ -2,7 +2,7 @@
 '''
 author:     Fabio Zanini
 date:       16/05/22
-content:    Compress Tabula Sapiens, heart.
+content:    Compress Tabula Sapiens.
 '''
 import os
 import sys
@@ -220,7 +220,7 @@ if __name__ == '__main__':
 
         # Fix cell type annotations
         adata_tissue.obs['cellType'] = fix_annotations(
-            adata_tissue, 'cell_ontology_class', 'human',
+            adata_tissue, 'cell_ontology_class', 'human', tissue,
             rename_dict, coarse_cell_types,
         )
 
@@ -234,7 +234,6 @@ if __name__ == '__main__':
             adata_tissue.obs['cellType'].value_counts().index,
             celltype_order,
         )
-
 
         print('Add data to celltype group')
         genes = adata_tissue.var_names
