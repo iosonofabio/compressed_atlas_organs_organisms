@@ -10,7 +10,7 @@ import h5py
 import scanpy as sc
 
 
-def get_tissue_data_dict(atlas_folder, rename_dict):
+def get_tissue_data_dict(species, atlas_folder, rename_dict=None):
     '''Get a dictionary with tissue order and files'''
     result = []
 
@@ -18,16 +18,19 @@ def get_tissue_data_dict(atlas_folder, rename_dict):
     fns = [x for x in fns if '.h5ad' in x]
 
     for filename in fns:
-        # TMS
-        tissue = filename.split('-')[-1].split('.')[0]
-        # TS
-        if tissue.startswith('TS_'):
+        if species == 'mouse':
+            tissue = filename.split('-')[-1].split('.')[0]
+        elif species == 'human':
             tissue = tissue[3:]
-        # TMC
-        if tissue.endswith('_hvg'):
+        elif species == 'lemur':
             tissue = tissue[:-len('_FIRM_hvg')].replace('_', ' ').title()
+        elif species in ('c_elegans', 'd_rerio'):
+            tissue = 'whole'
+        else:
+            raise ValueError('species not found: {:}'.format(species))
 
-        tissue = rename_dict['tissues'].get(tissue, tissue)
+        if rename_dict is not None:
+            tissue = rename_dict['tissues'].get(tissue, tissue)
         result.append({
             'tissue': tissue,
             'filename': atlas_folder / filename,
@@ -199,6 +202,7 @@ def fix_annotations(adata, column, species, tissue, rename_dict, coarse_cell_typ
         ('mouselemur', 'Lung'): ['epithelial cell of uterus'],
         ('mouselemur', 'Pancreas'): ['stromal cell', 'pancreatic endocrine cell'],
         ('mouselemur', 'Tongue'): ['stromal cell', 'pancreatic endocrine cell'],
+        ('c_elegans', 'whole'): ['Failed QC'],
     }
 
     celltypes_new = np.asarray(adata.obs[column]).copy()
@@ -244,8 +248,10 @@ def get_celltype_order(celltypes_unordered, celltype_order):
     missing_celltypes = False
     for celltype in celltypes_unordered:
         if celltype not in celltypes_ordered:
-            print('Missing celltype:', celltype)
-            missing_celltypes = True
+            if not missing_celltypes:
+                missing_celltypes = True
+                print('Missing celltypes:')
+            print(celltype)
 
     if missing_celltypes:
         raise IndexError("Missing cell types!")
@@ -255,15 +261,18 @@ def get_celltype_order(celltypes_unordered, celltype_order):
 
 def collect_gene_annotations(anno_fn, genes):
     '''Collect gene annotations from GTF file'''
+    featype = 'gene'
+
     with gzip.open(anno_fn, 'rt') as gtf:
         gene_annos = []
         for line in gtf:
-            if '\ttranscript\t' not in line:
+            if f'\t{featype}\t' not in line:
                 continue
             fields = line.split('\t')
-            if fields[2] != 'transcript':
+            if fields[2] != featype:
                 continue
             attrs = fields[-1].split(';')
+
             gene_name = None
             transcript_id = None
             for attr in attrs:
@@ -271,6 +280,13 @@ def collect_gene_annotations(anno_fn, genes):
                     gene_name = attr.split(' ')[-1][1:-1]
                 elif 'transcript_id' in attr:
                     transcript_id = attr.split(' ')[-1][1:-1]
+                elif 'Name=' in attr:
+                    gene_name = attr.split('=')[1]
+                    transcript_id = gene_name
+
+            if (gene_name is not None) and (transcript_id is None):
+                transcript_id = gene_name
+
             if (gene_name is None) or (transcript_id is None):
                 continue
             gene_annos.append({
@@ -284,7 +300,8 @@ def collect_gene_annotations(anno_fn, genes):
                 })
     gene_annos = pd.DataFrame(gene_annos)
 
-    assert gene_annos['transcript_id'].value_counts()[0] == 1
+    # NOTE: some species like zebrafish don't really have a transcript id (yet?)
+    #assert gene_annos['transcript_id'].value_counts()[0] == 1
 
     # FIXME: choose the largest transcript or something. For this particular
     # repo it's not that important

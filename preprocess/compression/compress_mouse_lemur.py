@@ -230,7 +230,8 @@ if __name__ == '__main__':
 
     compressed_atlas = {}
 
-    tissue_sources = get_tissue_data_dict(tmc_data_folder, rename_dict)
+    tissue_sources = get_tissue_data_dict(
+            'lemur', tmc_data_folder, rename_dict)
     tissues = list(tissue_sources.keys())
     for it, (tissue, full_atlas_fn) in enumerate(tissue_sources.items()):
         print(tissue)

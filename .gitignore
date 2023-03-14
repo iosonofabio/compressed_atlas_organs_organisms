@@ -15,6 +15,9 @@ figures
 *.h5
 *.xlsx
 *.gtf.gz
+*.gff.gz
+*.gff3.gz
+*.RDS
 
 # Auxiliary cache by packages
 *.pybiomart

@@ -6,10 +6,11 @@ paths:
     "mouse": "./static/atlas_data/tabula_muris_senis.h5"
     "human": "./static/atlas_data/tabula_sapiens.h5"
     "lemur": "./static/atlas_data/tabula_microcebus.h5"
+    "celegans": "./static/atlas_data/c_elegans.h5"
 
   # NOTE: this one is used for all species, depending on the column
+  # FIXME: generalize to all species/pairs somehow
   gene_ids: "./static/atlas_data/mouse_gene_names.tsv"
-
   ortholog_genes: "./static/atlas_data/human_mouse_gene_orthologs.tsv"
 
   pathways:
@@ -41,10 +42,13 @@ order:
   timepoint:
     "mouse": ['1m', '3m', '10m', '18m', '~19m', '21m', '24m', '30m']
     "human": ['31wk', '3yr', '31yr', '~60yr']
+    "lemur": ["10", "11"]
+    "celegans": ["2L"]
 
   dataset:
     "mouse": ['TMS']
     "human": ['TS']
     "lemur": ['TMC']
+    "celegans": ['TCE']
 
 # celltype order is chosen at compression time elsewhere, otherwise this becomes a mess

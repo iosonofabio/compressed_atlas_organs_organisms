@@ -2,7 +2,7 @@
 '''
 author:     Fabio Zanini
 date:       16/05/22
-content:    Compress Tabula Sapiens.
+content:    Compress zebrafish (Wagmer et al 2018)
 '''
 import os
 import sys
@@ -26,166 +26,136 @@ from utils import (
 
 
 root_repo_folder = pathlib.Path(__file__).parent.parent.parent
-ts_data_folder = root_repo_folder / 'data' / 'full_atlases' / 'tabula_sapiens'
-anno_fn = root_repo_folder / 'data' / 'gene_annotations' / 'Homo_sapiens.GRCh38.109.gtf.gz'
+atlas_data_folder = root_repo_folder / 'data' / 'full_atlases' / 'danio_rerio'
+anno_fn = root_repo_folder / 'data' / 'gene_annotations' / 'Danio_rerio.GRCz11.109.gtf.gz'
 webapp_fdn = root_repo_folder / 'webapp'
 output_fdn = webapp_fdn / 'static' / 'atlas_data'
-fn_out = output_fdn / 'tabula_sapiens.h5'
+fn_out = output_fdn / 'd_rerio.h5'
 
+species = 'd_rerio'
 
 rename_dict = {
-    'tissues': {
-        'Large_Intestine': 'Colon',
-    },
     'cell_types': {
-        'cd24 neutrophil': 'neutrophil',
-        'cd4-positive, alpha-beta t cell': 'T',
-        'cd8-positive, alpha-beta t cell': 'T',
-        'erythroid progenitor': 'erythroid',
-        'nk cell': 'NK',
-        'hematopoietic stem cell': 'HSC',
-        'nampt neutrophil': 'neutrophil',
-        'memory b cell': 'B',
-        'naive b cell': 'B',
-        'myeloid progenitor': 'myeloid',
-        'plasmablast': 'plasma cell',
-        'enterocyte of epithelium of large intestine': 'enterocyte',
-        'immature enterocyte': 'enterocyte',
-        'paneth cell of epithelium of large intestine': 'paneth',
-        'mature enterocyte': 'enterocyte',
-        'b cell': 'B',
-        'large intestine goblet cell': 'goblet',
-        'transit amplifying cell of large intestine': 'transit amp',
-        'goblet cell': 'goblet',
-        'intestinal crypt stem cell': 'crypt',
-        'intestinal crypt stem cell of large intestine': 'crypt',
-        'intestinal enteroendocrine cell': 'enteroendocrine',
-        'gut endothelial cell': 'endothelial',
-        'mast cell': 'mast',
-        'intestinal tuft cell': 'brush',
-        'cardiac muscle cell': 'cardiomyocyte',
-        'cardiac endothelial cell': 'coronary',
-        'fibroblast of cardiac tissue': 'fibroblast',
-        'smooth muscle cell': 'smooth muscle',
-        'cd4-positive helper t cell': 'T',
-        'kidney epithelial cell': 'epithelial',
-        'endothelial cell': 'endothelial',
-        'type i pneumocyte': 'AT1 epi',
-        'type ii pneumocyte': 'AT2 epi',
-        'basal cell': 'basal',
-        'classical monocyte': 'monocyte',
-        'club cell': 'club',
-        'non-classical monocyte': 'monocyte',
-        'capillary endothelial cell': 'capillary',
-        'respiratory goblet cell': 'goblet',
-        'lung ciliated cell': 'ciliated',
-        'capillary aerocyte': 'CAP2',
-        'vein endothelial cell': 'venous',
-        'lung microvascular endothelial cell': 'capillary',
-        'adventitial cell': 'fibroblast',
-        'dendritic cell': 'dendritic',
-        'intermediate monocyte': 'monocyte',
-        'pericyte cell': 'pericyte',
-        'endothelial cell of artery': 'arterial',
-        'cd4-positive alpha-beta t cell': 'T',
-        'bronchial smooth muscle cell': 'smooth muscle',
-        'vascular associated smooth muscle cell': 'vascular smooth muscle',
-        'cd8-positive alpha-beta t cell': 'T',
-        'endothelial cell of lymphatic vessel': 'lymphatic',
-        'bronchial vessel endothelial cell': 'capillary',
-        'pulmonary ionocyte': 'ionocyte',
-        'plasmacytoid dendritic cell': 'plasmacytoid',
-        'mesothelial cell': 'mesothelial',
-        'serous cell of epithelium of bronchus': 'serous',
-        'myofibroblast cell': 'smooth muscle',
-        'respiratory mucous cell': 'mucous',
-        'pancreatic acinar cell': 'acinar',
-        'pancreatic ductal cell': 'ductal',
-        'myeloid cell': 'myeloid',
-        't cell': 'T',
-        'pancreatic stellate cell': 'stellate',
-        'pancreatic beta cell': 'beta',
-        'pancreatic pp cell': 'PP',
-        'pancreatic alpha cell': 'alpha',
-        'pancreatic delta cell': 'delta',
-        'epithelial cell': 'epithelial',
-        'tongue muscle cell': 'striated muscle',
-        'schwann cell': 'schwann',
+        '24hpf-optic cup': 'optic cup',
+        '24hpf-pharyngeal arch - cd248b': '',
+        '24hpf-epidermal - col7a1l': '',
+        '24hpf-pharyngeal pouch': '',
+        '24hpf-pharyngeal arch - ndnf': 'ph arches',
+        '24hpf-pharyngeal arch - tbx1': 'ph arches',
+        '24hpf-pharyngeal arch - lbx1a': 'ph arches',
+        '24hpf-hatching gland': 'hatching gland',
+        '24hpf-periderm': 'peridermal',
+        '24hpf-notocord': 'notocord',
+        '24hpf-otic placode': 'otic placode',
+        '24hpf-epidermal - olfactory placode': 'olfactory placode',
+        '24hpf-lens': 'lens',
+        '24hpf-erythroid': 'erythroid',
+        '24hpf-macrophage': 'macrophage',
+        '24hpf-leukocyte': 'leukocyte',
+        '24hpf-pancreas primordium': 'pancreas primordium',
+        '24hpf-neural crest - iridoblast': 'iridophore',
+        '24hpf-neural crest - melanoblast': 'melanophore',
+        '24hpf-neural crest - xanthophore': 'xantophore',
+        '24hpf-pronephric duct': 'kidney epi',
+        '24hpf-retina pigmented epithelium': 'retinal',
+        '24hpf-pectoral fin bud': 'fin epi',
+        '24hpf-epidermal - anterior': 'anterior epi',
+        '24hpf-lateral line - krt15': 'epithelial',
+        '24hpf-epidermal - rbp4': 'epithelial',
+        '24hpf-epidermal - and1': 'epithelial',
+        '24hpf-epidermal - kera': 'epithelial',
+        '24hpf-epidermal - prr15la': 'epithelial',
+        '24hpf-epidermal - atp1a1a.2': 'epithelial',
+        '24hpf-epidermal - muc5ac': 'epithelial',
+        '24hpf-epidermal - grhl3': 'epithelial',
+        '24hpf-epidermal - acbd7': 'epithelial',
+        '24hpf-epidermal - s100a11': 'epithelial',
+        '24hpf-mesoderm - emp2': 'fibroblast',
+        '24hpf-heart': 'cardiomyocyte',
+        '24hpf-heart - hoxd9a': 'cardiomyocyte',
+        '24hpf-heart - mature': 'cardiomyocyte',
+        '24hpf-muscle - myl10': 'striated muscle',
+        '24hpf-muscle - myl1': 'striated muscle',
+        '24hpf-myotome': 'striated muscle',
+        '24hpf-proctodeum': 'rectum',
+        '24hpf-ionocyte - ca2': 'ionocyte',
+        '24hpf-neural crest': 'neural crest',
+        '24hpf-neural crest - mcamb': 'neural crest',
+        '24hpf-neural crest - grem2': 'neural crest',
+        '24hpf-neural - floorplate': 'neuron',
+        '24hpf-neural - diencephalon posterior': 'neuron',
+        '24hpf-differentiating neurons - sst1.1': 'neuron',
+        '24hpf-neural - midbrain': 'neuron',
+        '24hpf-neural - ventral hindbrain': 'neuron',
+        '24hpf-neural - dorsal hindbrain': 'neuron',
+        '24hpf-differentiating neurons': 'neuron',
+        '24hpf-differentiating neurons - hmx': 'neuron',
+        '24hpf-differentiating neurons - phox2a': 'neuron',
+        '24hpf-neural - hindbrain roofplate': 'neuron',
+        '24hpf-differentiating neurons - eomesa': 'neuron',
+        '24hpf-differentiating neurons - dlx': 'neuron',
+        '24hpf-neural - telencephalon': 'neuron',
+        '24hpf-neural - hindbrain gsx1': 'neuron',
+        '24hpf-neural - diencephalon ': 'neuron',
+        '24hpf-neural - midbrain ventral nkx6.2': 'neuron',
+        '24hpf-neural - posterior ventral nkx6.2': 'neuron',
+        '24hpf-differentiating neurons - rohon beard': 'neuron',
+        '24hpf-endoderm': 'endoderm',
+        '24hpf-endothelial': 'capillary',
+        '24hpf-endothelial - posterior': 'capillary',
+        '24hpf-neural - dorsal spinal cord': 'spinal cord',
+        '24hpf-tailbud - spinal cord': 'spinal cord',
+        '24hpf-germline': 'germline',
+        '24hpf-tailbud - PSM': 'PSM',
     },
 }
 
 coarse_cell_types = [
-    'endothelial',
-    'immune cell',
 ]
 
 
 celltype_order = [
     ('immune', [
-        'HSC',
-        'neutrophil',
-        'basophil',
-        'granulocyte',
-        'mast',
-        'myeloid',
-        'monocyte',
         'macrophage',
-        'dendritic',
+        'leukocyte',
         'erythroid',
-        'erythrocyte',
-        'B',
-        'plasma cell',
-        'T',
-        'NK',
-        'plasmacytoid',
     ]),
     ('epithelial', [
+        'anterior epi',
+        'fin epi',
+        'ionocyte',
         'epithelial',
-        'goblet',
-        'brush',
-        'crypt',
-        'transit amp',
-        'enterocyte',
-        'paneth',
-        'AT1 epi',
-        'AT2 epi',
-        'club',
-        'ciliated',
-        'ductal',
-        'acinar',
-        'keratinocyte',
-        'basal',
-        'serous',
-        'mucous',
+        'peridermal',
+        'kidney epi',
+        'retinal',
+        'xantophore',
+        'melanophore',
+        'iridophore',
+        'notocord',
     ]),
     ('endothelial', [
-        'arterial',
-        'venous',
-        'coronary',
+        'endoderm',
         'capillary',
-        'CAP2',
-        'lymphatic',
     ]),
     ('mesenchymal', [
         'fibroblast',
-        'alveolar fibroblast',
-        'cardiomyocyte',
-        'stellate',
         'striated muscle',
-        'smooth muscle',
-        'vascular smooth muscle',
-        'pericyte',
-        'mesothelial',
+        'cardiomyocyte',
+        'rectum',
+        'pancreas primordium',
+        'otic placode',
+        'olfactory placode',
     ]),
     ('other', [
-        'enteroendocrine',
-        'hepatocyte',
-        'ionocyte',
-        'alpha',
-        'beta',
-        'PP',
-        'delta',
-        'schwann',
+        'neuron',
+        'spinal cord',
+        'neural crest',
+        'lens',
+        'optic cup',
+        'ph arches',
+        'germline',
+        'PSM',
+        'hatching gland',
     ]),
     ('unknown', [
         'unknown',
@@ -201,16 +171,17 @@ if __name__ == '__main__':
 
     compressed_atlas = {}
 
-    tissue_sources = get_tissue_data_dict(
-            'human', ts_data_folder, rename_dict)
+    tissue_sources = get_tissue_data_dict(species, atlas_data_folder)
     tissues = list(tissue_sources.keys())
     for it, (tissue, full_atlas_fn) in enumerate(tissue_sources.items()):
         print(tissue)
 
         adata_tissue = anndata.read(full_atlas_fn)
 
-        # Restart from raw data and renormalize
-        adata_tissue = adata_tissue.raw.to_adata()
+        # Ignore cells with NaN in the cell.type column
+        idx = adata_tissue.obs['CellType'].isin(
+                adata_tissue.obs['CellType'].value_counts().index)
+        adata_tissue = adata_tissue[idx]
 
         # cptt throughout
         sc.pp.normalize_total(
@@ -221,9 +192,12 @@ if __name__ == '__main__':
 
         # Fix cell type annotations
         adata_tissue.obs['cellType'] = fix_annotations(
-            adata_tissue, 'cell_ontology_class', 'human', tissue,
+            adata_tissue, 'CellType', 'c_elegans', tissue,
             rename_dict, coarse_cell_types,
         )
+
+        # Age
+        adata_tissue.obs['age'] = '24hpf'
 
         # Correction might declare some cells as untyped/low quality
         # they have an empty string instead of an actual annotation
@@ -259,16 +233,12 @@ if __name__ == '__main__':
             ncells_ge[celltype] = idx.sum()
 
         print('Add data to celltype-timepoint group')
-        # NOTE: see supplementary table 1 of the Science paper
-        adata_tissue.obs['age'] = adata_tissue.obs['donor'].map({
-            'TSP7': 69, 'TSP14': 59, 'TSP4': 38,
-        })
         ages = adata_tissue.obs['age'].value_counts().index.tolist()
         ages.sort()
         columns_age = []
         for ct in celltypes:
             for age in ages:
-                columns_age.append('_'.join([ct, 'TS', str(age)]))
+                columns_age.append('_'.join([ct, 'Celegans', str(age)]))
 
         # Averages
         genes = adata_tissue.var_names
@@ -292,7 +262,7 @@ if __name__ == '__main__':
                 if len(idx_age) == 0:
                     continue
                 Xct_age = adata_ct.X[idx_age]
-                label = '_'.join([celltype, 'TS', str(age)])
+                label = '_'.join([celltype, 'TMC', str(age)])
                 avg_ge_tp[label] = np.asarray(Xct_age.mean(axis=0))[0]
                 frac_ge_tp[label] = np.asarray((Xct_age > 0).mean(axis=0))[0]
                 ncells_ge_tp[label] = len(idx_age)
@@ -326,7 +296,7 @@ if __name__ == '__main__':
     if needs_union:
         raise NotImplementedError('TODO: make union of features')
 
-    print('Add gene annotations')
+    print('Get gene annotations')
     gene_annos = collect_gene_annotations(anno_fn, genes)
 
     print('Store compressed atlas to file')

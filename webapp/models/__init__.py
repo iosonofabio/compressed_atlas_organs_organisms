@@ -30,7 +30,6 @@ from models.assets import (
         )
 
 
-
 def get_counts(
         df_type,
         features=None,
@@ -55,6 +54,11 @@ def get_counts(
 
     fn_atlas = fn_atlasd[species]
     with h5py.File(fn_atlas, "r") as h5_data:
+        # NOTE: If tissue not found (e.g. C elegans), default to "whole"
+        tissues_avail = h5_data[feature_type]['by_tissue'].keys()
+        if (tissue not in tissues_avail) and ('whole' in tissues_avail):
+            tissue = 'whole'
+
         columns = h5_data[feature_type]['by_tissue'][tissue][df_type]['index'].asstr()[:]
 
         # Lazy structure, for speed
