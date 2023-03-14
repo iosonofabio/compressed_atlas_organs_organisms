@@ -131,12 +131,12 @@ command_dict = {
                 n_features=number)
     },
     'list_cell_types': {
-        'url_func': lambda sfx: url_for(
+        'url_func': lambda sfx, species: url_for(
             'list_celltypes_timepoint',
             timepoint=sfx),
     },
     'celltype_abundance': {
-        'url_func': lambda sfx: url_for(
+        'url_func': lambda sfx, species: url_for(
             'plot_celltype_abundance',
             timepoint=sfx),
     },

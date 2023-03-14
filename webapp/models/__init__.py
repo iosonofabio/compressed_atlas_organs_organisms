@@ -722,9 +722,15 @@ def get_data_condition(
 def get_celltype_abundances(
         timepoints=None,
         kind='qualitative',
-        species='mouse'):
+        species='mouse',
+        tissue='Lung',
+    ):
     '''Get cell type abundances at a certain time point'''
-    ncells_tp = get_number_cells('celltype_dataset_timepoint')
+    ncells_tp = get_number_cells(
+            'celltype_dataset_timepoint',
+            species=species,
+            tissue=tissue,
+            )
 
     if timepoints is not None:
         idx = []

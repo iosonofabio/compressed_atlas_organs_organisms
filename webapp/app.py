@@ -308,16 +308,24 @@ def heatmap_differential_measurement():
 @app.route("/list_celltypes/<timepoint>", methods=["GET"])
 def list_celltypes_timepoint(timepoint='', species="mouse"):
     '''List cell types and their abundances'''
+    species = request.args.get('species', 'mouse')
+    tissue = request.args.get(
+            'tissue', get_tissues('gene_expression', species)[0])
+
     other_timepoints = ['Overall'] + config['order']['timepoint'][species]
-    celltypes = list(get_celltypes('gene_expression', species=species, tissue=tissue))
+    celltypes = list(get_celltypes(
+        'gene_expression', species=species, tissue=tissue))
 
     if timepoint != '':
         timepoint = validate_correct_timepoint(timepoint)
         celltype_abundance = get_celltype_abundances(
                 [timepoint],
                 kind='quantitative',
+                species=species,
+                tissue=tissue,
                 )
-        celltypes_sorted = list(celltype_abundance.sort_values(ascending=False).index)
+        celltypes_sorted = list(
+                celltype_abundance.sort_values(ascending=False).index)
         celltype_abundance = celltype_abundance.to_dict()
         other_timepoints = [x for x in other_timepoints if x != timepoint]
     else:
@@ -343,9 +351,15 @@ def list_celltypes_timepoint(timepoint='', species="mouse"):
 @app.route("/celltype_abundance/<timepoint>", methods=["GET"])
 def plot_celltype_abundance(timepoint):
     '''Plot cell type abundances'''
+    species = request.args.get('species', 'mouse')
+    tissue = request.args.get(
+            'tissue', get_tissues('gene_expression', species)[0])
+
     celltype_dict = get_celltype_abundances(
             timepoint,
             kind='quantitative',
+            species=species,
+            tissue=tissue,
             )
     return render_template(
             'celltype_abundance.html',

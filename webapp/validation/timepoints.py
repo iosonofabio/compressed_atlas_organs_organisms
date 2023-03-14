@@ -6,9 +6,14 @@ content:    Validate time points.
 '''
 
 
-def validate_correct_timepoint(text):
+def validate_correct_timepoint(text, empty_ok=False):
     '''Validate and correct a timepoint'''
     from text_recognition.assets import numbers
+
+    if text == '':
+        if empty_ok:
+            return ''
+        return None
 
     text = text.strip(' ')
     if text.startswith('at '):

@@ -7,6 +7,7 @@ paths:
     "human": "./static/atlas_data/tabula_sapiens.h5"
     "lemur": "./static/atlas_data/tabula_microcebus.h5"
     "celegans": "./static/atlas_data/c_elegans.h5"
+    "drerio": "./static/atlas_data/d_rerio.h5"
 
   # NOTE: this one is used for all species, depending on the column
   # FIXME: generalize to all species/pairs somehow
@@ -44,6 +45,7 @@ order:
     "human": ['31wk', '3yr', '31yr', '~60yr']
     "lemur": ["10", "11"]
     "celegans": ["2L"]
+    "drerio": ["24hpf"]
 
   dataset:
     "mouse": ['TMS']

@@ -156,7 +156,7 @@ phrase_dict = {
             'cell types',
             '!ct',
         ],
-        'suffix_type': 'timepoint',
+        'suffix_type': 'timepointornone',
     },
     'celltype_abundance': {
         'prefixes': [
@@ -244,6 +244,8 @@ def excise_species_from_suffix(suffix):
         ('human', ['in humans', 'in human']),
         ('lemur', ['in mouse lemur', 'in lemur', 'in monkey']),
         ('mouse', ['in mouse', 'in mice']),
+        ('celegans', ['in celegans', 'in worm', 'in c_elegans']),
+        ('drerio', ['in drerio', 'in zebrafish', 'in d_rerio', 'in danio rerio']),
     ]
     for species, phrases_species in phrases:
         for phrase in phrases_species:
@@ -290,7 +292,11 @@ def interpret_text(text):
                 suffix)
         question = 'celltype_dataset_timepoint_string'
     elif suffix_type == 'timepoint':
-        suffix_corrected = validate_correct_timepoint(suffix)
+        suffix_corrected = validate_correct_timepoint(suffix, species)
+        question = 'timepoint'
+    elif suffix_type == 'timepointornone':
+        suffix_corrected = validate_correct_timepoint(
+                suffix, empty_ok=True)
         question = 'timepoint'
     elif suffix_type == "species_genestring":
         suffix_corrected = validate_correct_species_genestr(species, suffix)
